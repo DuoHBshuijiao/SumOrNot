@@ -22,16 +22,24 @@
       --accent-2: #b8956a;
       --danger: #c77b72;
       --warning: #c9a34a;
-      --good: #8faa8a;
-      --good-fill: rgba(100, 130, 95, 0.16);
+      --good: #9ab892;
+      --good-fill: color-mix(in srgb, #5a8f62 32%, transparent);
       --bad-fill: rgba(150, 90, 85, 0.12);
       --radius: 8px;
-      --focus-ring: #6b5a48;
-      --chart-surface: #141210;
-      --chart-a: #8caabe;
-      --chart-b: #c9a86e;
-      --chart-diff: #b88b82;
-      --chart-marker: #e0bc7a;
+      --focus-ring: #7d6a52;
+      /* 图表：高区分、暖底协调；A 偏青蓝、B 金琥珀、差值珊瑚、标记亮金 */
+      --chart-surface: #13100d;
+      --chart-a: #5ab4e0;
+      --chart-b: #e8a52e;
+      --chart-diff: #e86b5c;
+      --chart-marker: #ffd15c;
+      --chart-grid-y: color-mix(in srgb, var(--text) 24%, transparent);
+      --chart-grid-x: color-mix(in srgb, var(--accent-2) 28%, transparent);
+      --chart-tick: color-mix(in srgb, var(--text) 78%, var(--bg) 22%);
+      --chart-zero: color-mix(in srgb, var(--muted) 55%, var(--faint) 45%);
+      --chart-k-stroke: color-mix(in srgb, var(--accent) 70%, #fff 30%);
+      --chart-h-stroke: color-mix(in srgb, var(--accent-2) 50%, var(--faint) 50%);
+      --chart-hit-stroke: color-mix(in srgb, var(--panel) 40%, #1a1815 60%);
       /* 间距阶：主结构用 4/5/6，组件内用 2/3 */
       --space-1: 4px;
       --space-2: 8px;
@@ -54,6 +62,7 @@
     @media (prefers-reduced-motion: reduce) {
       .sidebar-details,
       .sidebar-details > summary::after,
+      .modeling-details > summary::after,
       select,
       button,
       .tooltip {
@@ -236,6 +245,13 @@
       margin-bottom: 8px;
     }
     .field { margin-bottom: 10px; }
+    .field-head {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
     .row {
       display: flex;
       justify-content: space-between;
@@ -374,7 +390,7 @@
       flex-wrap: wrap;
       gap: var(--space-2) 14px;
       padding: 0 var(--space-4) var(--space-3);
-      color: var(--muted);
+      color: var(--chart-tick);
       font-size: 12px;
     }
     .legend span {
@@ -385,6 +401,7 @@
     .dot {
       width: 10px; height: 10px; border-radius: 999px;
       display: inline-block;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 50%, var(--bg) 50%);
     }
     .kpi-grid {
       display: grid;
@@ -441,6 +458,39 @@
       color: var(--faint);
       font-size: 11px;
       line-height: 1.55;
+    }
+    .modeling-details {
+      border-top: 1px solid var(--border);
+      padding: 0 var(--space-4) var(--space-3);
+    }
+    .modeling-details > summary {
+      list-style: none;
+      cursor: pointer;
+      user-select: none;
+      color: var(--faint);
+      font-size: 12px;
+      padding: var(--space-2) 0;
+    }
+    .modeling-details > summary::-webkit-details-marker { display: none; }
+    .modeling-details > summary::after {
+      content: "";
+      display: inline-block;
+      width: 0; height: 0;
+      margin-left: 6px;
+      vertical-align: middle;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid var(--faint);
+      transition: transform 0.15s ease;
+    }
+    .modeling-details[open] > summary::after { transform: rotate(180deg); }
+    .modeling-details[open] > summary { color: var(--muted); }
+    .modeling-details .modeling-body {
+      margin: 0;
+      padding: 0;
+      font-size: 11px;
+      line-height: 1.55;
+      color: var(--faint);
     }
     .tooltip {
       position: absolute;
@@ -557,7 +607,7 @@
     <header>
       <div>
         <h1>对话成本策略比较器</h1>
-        <div class="subtitle">切换 B 策略为“持续滚动窗口”或“批量裁剪”，调整 API 价格、总结频率 K、窗口 H、压缩比 R / 摘要长度 S，右侧会实时显示总成本曲线、差值曲线、优势区间和交点。</div>
+        <div class="subtitle">调左侧参数，右侧看累计成本、差值与 B 更便宜的轮次范围。</div>
       </div>
       <div class="pill">单页 HTML · 原生 JS · 可直接保存使用</div>
     </header><div class="grid">
@@ -571,13 +621,13 @@
             <span class="summary-brief">K、H、P、c 价 等<span class="summary-brief-mobile"> · 小屏可展开</span></span>
           </span>
         </summary>
-        <p class="param-glossary">速查：<kbd>K</kbd> 为总结周期（每 <kbd>K</kbd> 轮触发摘要）；<kbd>H</kbd> 为窗口内参与保留的轮数上界；<kbd>P</kbd> / <kbd>A</kbd> 为系统提示与单轮输出 token 数；<kbd>c_in</kbd> <kbd>c_cache</kbd> <kbd>c_out</kbd> 为每百万 token 的输入/缓存/输出价（元）。</p>
+        <p class="param-glossary"><kbd>K</kbd> 每几轮做摘要，<kbd>H</kbd> 窗内轮数上界，<kbd>P</kbd><kbd>A</kbd> token 数，<kbd>c</kbd> 价为元/百万 token。</p>
       </details>
 
       <div class="section">
         <div class="section-title">策略</div>
         <div class="field">
-          <div class="row"><label>策略 B 模式</label><span class="value">两种可切换</span></div>
+          <label for="bMode" class="field-head">策略 B 模式</label>
           <select id="bMode">
             <option value="rolling">持续滚动窗口</option>
             <option value="batch">批量裁剪</option>
@@ -696,13 +746,13 @@
   <main class="panel chart-panel">
     <div class="chart-header">
       <div>
-        <h2>成本曲线与优势区间</h2>
-        <div class="meta">横轴为 N，纵轴为累计成本。浅色纵带标出 B 不高于 A 的轮次区间（仅当 B−A ≤ 0）。</div>
+        <h2>成本与优势</h2>
+        <div class="meta">横轴 N、纵轴元；绿带为 B 累计不高于 A 的区间。</div>
       </div>
       <div class="meta" id="currentSummary"></div>
     </div>
 
-    <p id="chartVisDesc" class="sr-only">折线图。横轴为轮数，纵轴为人民币累计成本。系列含义见图例。若仅使用键盘或读屏，请用专区内「按轮次探点」输入轮数 N 或上一条、下一条，勿依赖图上透明热点。</p>
+    <p id="chartVisDesc" class="sr-only">双折线累计成本与差值。读屏用「按轮次探点」输入 N 或上/下条，勿依赖图上的透明热点。</p>
 
     <div class="kpi-grid" aria-label="关键指标">
       <div class="kpi">
@@ -734,8 +784,8 @@
       aria-labelledby="chart-probe-title"
       aria-describedby="chartVisDesc"
     >
-      <h3 id="chart-probe-title">按轮次探点（键盘与读屏）</h3>
-      <p class="chart-probe-hint" id="chart-probe-hint">图表上的透明大圆为鼠标探点用热点，不接收键盘；请用此处输入轮数 N 或上一条、下一条，获取与悬停等效的累计成本与差值读数。</p>
+      <h3 id="chart-probe-title">按轮次探点</h3>
+      <p class="chart-probe-hint" id="chart-probe-hint">无鼠标时在此读数；与图上悬停一致。</p>
       <div class="chart-probe-row">
         <label for="chartProbeN">轮数 <span aria-hidden="true">N</span><span class="sr-only"> N </span></label>
         <input
@@ -752,7 +802,7 @@
         <button type="button" id="chartProbePrev">上一条</button>
         <button type="button" id="chartProbeNext">下一条</button>
       </div>
-      <p class="chart-probe-legend" id="chart-probe-legend">A：全缓存；B：当前策略。探点 N 不超过左侧「最大轮数 N_max」。</p>
+      <p class="chart-probe-legend" id="chart-probe-legend">N 不超过左栏「最大轮数」。</p>
       <div class="chart-probe-readout" id="chartProbeReadout" role="status" aria-live="polite" aria-atomic="true">加载中</div>
     </div>
 
@@ -789,13 +839,16 @@
             <th>起点 N</th>
             <th>终点 N</th>
             <th>长度</th>
-            <th>区间内谁更便宜</th>
+            <th>更便宜</th>
           </tr>
         </thead>
         <tbody id="intervalTable"></tbody>
       </table>
     </div>
-    <div class="footer-note">建模说明：A 使用连续前缀缓存；B 的“持续滚动窗口”在窗口满后按保守模型近似为每轮重排，命中缓存大幅减弱；“批量裁剪”则在非裁剪轮可享受前缀缓存，但在裁剪或总结更新轮会发生缓存重置。此页面目的是把这类阈值与区间直观画出来，便于调参比较。</div>
+    <details class="modeling-details">
+      <summary>建模与假设</summary>
+      <p class="modeling-body">A：连续前缀缓存。B 滚动窗满后按保守模型近似为每轮重排，缓存命中减弱。B 批量裁剪：非裁剪轮可走前缀缓存在裁剪/总结轮重置。本页用于扫阈值与区间、辅助调参。</p>
+    </details>
     </div>
   </main>
 </div>
@@ -1082,7 +1135,7 @@
 
     let html = '';
     html += '<desc id="chartSvgDesc"></desc>';
-    html += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="#141210" />`;
+    html += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="var(--chart-surface)" />`;
 
     if (els.showBands.checked) {
       for (const seg of intervals) {
@@ -1094,23 +1147,30 @@
 
     for (const v of yTicks) {
       const yy = y(v);
-      html += `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="rgba(185,174,163,0.22)" stroke-dasharray="4 4" />`;
-      html += `<text x="${pad.l - 10}" y="${yy + 4}" fill="rgba(200,190,178,0.92)" font-size="12" text-anchor="end">${v >= 0 ? money.format(v) : '-' + money.format(Math.abs(v))}</text>`;
+      html += `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="var(--chart-grid-y)" stroke-dasharray="4 4" />`;
+      html += `<text x="${pad.l - 10}" y="${yy + 4}" fill="var(--chart-tick)" font-size="12" text-anchor="end">${v >= 0 ? money.format(v) : '-' + money.format(Math.abs(v))}</text>`;
     }
 
     for (const n of xTicks) {
       const xx = x(n);
-      html += `<line x1="${xx}" y1="${pad.t}" x2="${xx}" y2="${H - pad.b}" stroke="rgba(138,126,112,0.28)" />`;
-      html += `<text x="${xx}" y="${H - pad.b + 24}" fill="rgba(200,190,178,0.9)" font-size="12" text-anchor="middle">${n}</text>`;
+      html += `<line x1="${xx}" y1="${pad.t}" x2="${xx}" y2="${H - pad.b}" stroke="var(--chart-grid-x)" />`;
+      html += `<text x="${xx}" y="${H - pad.b + 24}" fill="var(--chart-tick)" font-size="12" text-anchor="middle">${n}</text>`;
     }
 
     if (els.showBoundaries.checked) {
       const kx = x(p.K);
       const hx = x(p.H);
-      html += `<line x1="${kx}" y1="${pad.t}" x2="${kx}" y2="${H - pad.b}" stroke="rgba(212,165,116,0.55)" stroke-dasharray="7 6" />`;
-      html += `<line x1="${hx}" y1="${pad.t}" x2="${hx}" y2="${H - pad.b}" stroke="rgba(138,126,112,0.42)" stroke-dasharray="7 6" />`;
-      html += `<text x="${kx + 6}" y="${pad.t + 16}" fill="rgba(232,220,205,0.95)" font-size="12">K=${p.K}</text>`;
-      html += `<text x="${hx + 6}" y="${pad.t + 34}" fill="rgba(185,174,163,0.9)" font-size="12">H=${p.H}</text>`;
+      html += `<line x1="${kx}" y1="${pad.t}" x2="${kx}" y2="${H - pad.b}" stroke="var(--chart-k-stroke)" stroke-width="1.2" stroke-dasharray="7 6" />`;
+      html += `<line x1="${hx}" y1="${pad.t}" x2="${hx}" y2="${H - pad.b}" stroke="var(--chart-h-stroke)" stroke-width="1.1" stroke-dasharray="7 6" />`;
+      html += `<text x="${kx + 6}" y="${pad.t + 16}" fill="var(--chart-tick)" font-size="12">K=${p.K}</text>`;
+      html += `<text x="${hx + 6}" y="${pad.t + 34}" fill="var(--chart-tick)" font-size="12">H=${p.H}</text>`;
+    }
+
+    html += `<path d="${pathA}" fill="none" stroke="var(--chart-a)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" />`;
+    html += `<path d="${pathB}" fill="none" stroke="var(--chart-b)" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" />`;
+    if (els.showDiff.checked) {
+      html += `<line x1="${pad.l}" y1="${y(0)}" x2="${W - pad.r}" y2="${y(0)}" stroke="var(--chart-zero)" stroke-width="1" stroke-dasharray="5 5" />`;
+      html += `<path d="${pathD}" fill="none" stroke="var(--chart-diff)" stroke-width="2.1" stroke-dasharray="7 4" stroke-linecap="round" stroke-linejoin="round" />`;
     }
 
     if (els.showMarkers.checked) {
@@ -1118,16 +1178,13 @@
       if (cross) {
         const n = Math.max(1, Math.min(p.N_max, Math.round(+cross)));
         const d = points[n - 1];
-        html += `<circle cx="${x(n)}" cy="${y(d.a)}" r="5" fill="var(--chart-marker)" stroke="#3a342c" stroke-width="1" />`;
-        html += `<text x="${x(n) + 10}" y="${y(d.a) - 8}" fill="rgba(232,220,205,0.95)" font-size="12">交点≈${cross}</text>`;
+        const cx = x(n);
+        const cya = y(d.a);
+        html += `<g class="chart-cross" pointer-events="none" aria-label="交点">`;
+        html += `<circle cx="${cx}" cy="${cya}" r="6" fill="var(--chart-marker)" stroke="var(--chart-hit-stroke)" stroke-width="1.5" />`;
+        html += `<text x="${cx + 10}" y="${cya - 8}" font-size="12" fill="var(--chart-tick)" stroke="var(--chart-surface)" stroke-width="2.2" style="paint-order: stroke fill">交点≈${cross}</text>`;
+        html += `</g>`;
       }
-    }
-
-    html += `<path d="${pathA}" fill="none" stroke="var(--chart-a)" stroke-width="2" />`;
-    html += `<path d="${pathB}" fill="none" stroke="var(--chart-b)" stroke-width="2" />`;
-    if (els.showDiff.checked) {
-      html += `<line x1="${pad.l}" y1="${y(0)}" x2="${W - pad.r}" y2="${y(0)}" stroke="rgba(138,126,112,0.45)" stroke-dasharray="5 5" />`;
-      html += `<path d="${pathD}" fill="none" stroke="var(--chart-diff)" stroke-width="1.5" stroke-dasharray="6 4" />`;
     }
 
     points.forEach((d) => {
@@ -1146,7 +1203,7 @@
       const diffOn = els.showDiff.checked;
       const bandsOn = els.showBands.checked;
       const bOn = els.showBoundaries.checked;
-      descEl.textContent = `横轴自第 1 轮至第 ${p.N_max} 轮，纵轴为人民币累计元。实线分别为：策略 A 全缓存、策略 B 当前模式。${diffOn ? '虚线为 B 与 A 的差。' : '当前已关闭差值虚线。'}${bandsOn ? '淡色纵带为 B 不高于 A 的区间。' : '未高亮 B 优势区间。'}${bOn ? '另有竖线标出 K 与 H 位置。' : '未显示 K 与 H 竖线。'}图上有透明大圆，仅对鼠标可悬停显示浮动提示，不能用键盘选点；请使用图象上方控件的 N 与上一条、下一条。`;
+      descEl.textContent = `1–${p.N_max} 轮，纵轴元。A/B 为实线。${diffOn ? '虚线为差。' : '差已关。'}${bandsOn ? '带表 B 更省。' : '无带。'}${bOn ? 'K/H 线。' : '无K/H。'}大圆为鼠标探针；无鼠标用图上方探点。`;
     }
     if (els.tooltip) els.tooltip.setAttribute('aria-hidden', 'true');
 
@@ -1179,7 +1236,7 @@
 
   function renderTable(intervals, points) {
     if (!intervals.length) {
-      els.intervalTable.innerHTML = `<tr><td colspan="5">当前参数下，B 在整个范围内都没有形成成本优势区间。</td></tr>`;
+      els.intervalTable.innerHTML = `<tr><td colspan="5">无 B 更省段。</td></tr>`;
       return;
     }
     els.intervalTable.innerHTML = intervals.map((seg, idx) => {
@@ -1213,19 +1270,19 @@
     const cc = +els.c_cache.value;
     const co = +els.c_out.value;
     const apiDef = numEq(ci, DEFAULTS.c_in) && numEq(cc, DEFAULTS.c_cache) && numEq(co, DEFAULTS.c_out);
-    const apiState = apiDef ? '默认' : '已改';
-    briefEls.api.textContent = `${apiState} · 入 ${fmt.format(ci)} / 缓 ${fmt.format(cc)} / 出 ${fmt.format(co)} · 元/百万`;
+    const apiState = apiDef ? '默' : '改';
+    briefEls.api.textContent = `${apiState} 入${fmt.format(ci)} 缓${fmt.format(cc)} 出${fmt.format(co)}`;
 
     const sm = els.summaryMode.value;
     const rV = +els.R.value;
     const sV = +els.S.value;
     const sumDef = sm === DEFAULTS.summaryMode && numEq(rV, DEFAULTS.R) && numEq(sV, DEFAULTS.S);
-    const sumState = sumDef ? '默认' : '已改';
+    const sumState = sumDef ? '默' : '改';
     if (sm === 'R') {
       const sApprox = (+els.K.value * +els.A.value) / rV;
-      briefEls.summary.textContent = `${sumState} · 按 R，R=${fmt.format(rV)}，S≈${fmt.format(sApprox)}（K×A/R）`;
+      briefEls.summary.textContent = `${sumState} R=${fmt.format(rV)} S≈${fmt.format(sApprox)}`;
     } else {
-      briefEls.summary.textContent = `${sumState} · 按 S= ${fmt.format(sV)}`;
+      briefEls.summary.textContent = `${sumState} S=${fmt.format(sV)}`;
     }
 
     const off = [];
@@ -1235,8 +1292,8 @@
     if (!els.showBands.checked) off.push('优势带');
     const dispDef = off.length === 0;
     briefEls.display.textContent = dispDef
-      ? '默认 · 差值/交点/边界/优势带 全开启'
-      : `已改 · 已关：${off.join('、')}`;
+      ? '全开'
+      : `关：${off.join('、')}`;
 
     briefEls.api.title = briefEls.api.textContent;
     briefEls.summary.title = briefEls.summary.textContent;
@@ -1269,11 +1326,11 @@
 
     els.kpiS.textContent = fmt.format(currentS);
     els.kpiSHint.textContent = p.summaryMode === 'R'
-      ? `S = K × A / R = ${fmt.format(p.K)} × ${fmt.format(p.A)} / ${fmt.format(p.R)}`
-      : `直接使用手动输入的摘要长度`;
+      ? `K×A/R = ${fmt.format(p.K)}×${fmt.format(p.A)}/${fmt.format(p.R)}`
+      : '手填 S';
 
     els.kpiBreak.textContent = cross ? cross : '无';
-    els.kpiBreakHint.textContent = cross ? '这是 A / B 总成本差值的近似穿越点。' : '在当前 N_max 范围内未检测到交点。';
+    els.kpiBreakHint.textContent = cross ? 'A/B 总成本差值过零近似位置' : 'N_max 内无交点';
 
     const winnerAtN = points[p.N_max - 1];
     els.kpiWinner.textContent = winnerAtN.a < winnerAtN.b ? 'A 更便宜' : (winnerAtN.a > winnerAtN.b ? 'B 更便宜' : '打平');
@@ -1282,8 +1339,8 @@
     const ratio = postKCount > 0 ? (advantageCount / postKCount) * 100 : 0;
     els.kpiRatio.textContent = postKCount > 0 ? `${ratio.toFixed(1)}%` : '—';
     els.kpiRatioHint.textContent = postKCount > 0
-      ? `在 N > K 的共 ${postKCount} 轮中，B 更便宜的轮数占比。N≤K 未触发首摘，A/B 与 A 基线一致，不计入。`
-      : '当前 N_max ≤ K，尚未触发第一次摘要，不统计 B 优势占比。';
+      ? `N>K 的 ${postKCount} 轮中 B 更省占比；N≤K 不计`
+      : 'N_max≤K 未首摘，不统计';
 
     const summaryText = `${p.bMode === 'rolling' ? '持续滚动窗口' : '批量裁剪'} · ${p.summaryMode === 'R' ? `R=${fmt.format(p.R)}` : `S=${fmt.format(p.S)}`} · K=${p.K} · H=${p.H}`;
     els.currentSummary.textContent = summaryText;
@@ -1298,16 +1355,14 @@
     else dominant = 'A 更常占优';
 
     const ratioLine = postKCount > 0
-      ? `在 <strong>N &gt; K</strong> 的轮次中，B 更便宜约占 <strong>${ratio.toFixed(1)}%</strong>（分母为 ${postKCount} 轮）。`
-      : '因 <strong>N_max ≤ K</strong>，尚未进入首摘后的比较区间，优势占比 <strong>不适用</strong>。';
+      ? `N&gt;K 时 B 更省约 <strong>${ratio.toFixed(1)}%</strong>（${postKCount} 轮为分母）。`
+      : '<strong>N_max≤K</strong>，占比不适用。';
 
     els.analysis.innerHTML = `
-      当前模式下，<strong>${dominant}</strong>。<br>
-      B 的优势区间共 <strong>${intervals.length}</strong> 段；${ratioLine}<br>
-      最接近打平的轮数出现在 <strong>N = ${fmt.format(minDiff.n)}</strong>，此时差值约为 <strong>${minDiff.d >= 0 ? '+' : ''}${money.format(minDiff.d)} 元</strong>。<br>
-      ${firstGood ? `首段优势区间约为 <strong>[${firstGood.start}, ${firstGood.end}]</strong>。` : '当前参数下没有 B 的成本优势区间。'}
-      ${lastGood && intervals.length > 1 ? `末段优势区间约为 <strong>[${lastGood.start}, ${lastGood.end}]</strong>。` : ''}
-      <br><span style="color:var(--muted);font-size:12px;opacity:0.9">N ≤ K 时未触发首摘，累计差值为 0；B 优势区间与占比仅针对 N &gt; K（首摘已发生）。</span>
+      <strong>${dominant}</strong>；优势段 <strong>${intervals.length}</strong> 条。${ratioLine}<br>
+      打平最近：<strong>N=${fmt.format(minDiff.n)}</strong>，差 <strong>${minDiff.d >= 0 ? '+' : ''}${money.format(minDiff.d)} 元</strong>。
+      ${firstGood ? `首段 <strong>[${firstGood.start},${firstGood.end}]</strong>` : '无 B 更省段'}
+      ${lastGood && intervals.length > 1 ? `；末段 <strong>[${lastGood.start},${lastGood.end}]</strong>` : ''}。
     `;
 
     lastPoints = points;
