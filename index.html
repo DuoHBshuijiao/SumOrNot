@@ -134,8 +134,24 @@
       border-radius: var(--radius);
       overflow: hidden;
     }
+    /* DOM 顺序：main 在前、aside 在后，窄屏先读结论；桌面用列定位保持「侧栏在左」 */
+    .grid > aside {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .grid > main {
+      grid-column: 2;
+      grid-row: 1;
+      min-width: 0;
+    }
     .grid > .panel {
       background: var(--panel);
+    }
+    .core-params-hint {
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--faint);
+      margin: 0 0 var(--space-3) 0;
     }
     .panel {
       background: var(--panel);
@@ -618,6 +634,14 @@
     a:focus-visible, summary:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
     @media (max-width: 1120px) {
       .grid { grid-template-columns: 1fr; }
+      .grid > main {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      .grid > aside {
+        grid-column: 1;
+        grid-row: 2;
+      }
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
       .kpi { border-right: 0; }
       .kpi:nth-child(odd) { border-right: 1px solid var(--border); }
@@ -697,142 +721,10 @@
     <header>
       <div>
         <h1>对话成本策略比较器</h1>
-        <div class="subtitle">调左侧参数，右侧看累计成本、差值与 B 更便宜的轮次范围。</div>
+        <div class="subtitle">主区域看曲线与关键数字；参数在侧栏。窄屏先读结论，向下划再调参。</div>
       </div>
       <div class="pill">单页 HTML · 原生 JS · 可直接保存使用</div>
     </header><div class="grid">
-  <aside class="panel">
-    <h2>参数面板</h2>
-    <div class="panel-body">
-      <details class="sidebar-details param-glossary-details" id="glossary-details">
-        <summary>
-          <span class="summary-stack">
-            <span class="summary-label">参数符号速查</span>
-            <span class="summary-brief">K、H、P、c 价 等<span class="summary-brief-mobile"> · 小屏可展开</span></span>
-          </span>
-        </summary>
-        <p class="param-glossary"><kbd>K</kbd> 每几轮做摘要，<kbd>H</kbd> 窗内轮数上界，<kbd>P</kbd><kbd>A</kbd> token 数，<kbd>c</kbd> 价为元/百万 token。</p>
-      </details>
-
-      <div class="section">
-        <div class="section-title">策略</div>
-        <div class="field">
-          <label for="bMode" class="field-head">策略 B 模式</label>
-          <select id="bMode">
-            <option value="rolling">持续滚动窗口</option>
-            <option value="batch">批量裁剪</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">核心参数</div>
-        <div class="field">
-          <div class="row"><label>系统提示词 <abbr title="首条系统提示的 token 数">P</abbr></label><span class="value" id="v-p"></span></div>
-          <p class="abbr-hint-touch">P：首条系统消息 token 数（系统提示）。</p>
-          <input id="P" type="range" min="0" max="50000" step="100" value="10000" />
-        </div>
-        <div class="field">
-          <div class="row"><label>每轮输出 <abbr title="模型每轮回复的 token 数">A</abbr></label><span class="value" id="v-a"></span></div>
-          <p class="abbr-hint-touch">A：模型每轮回复的 token 数。</p>
-          <input id="A" type="range" min="100" max="10000" step="100" value="2000" />
-        </div>
-        <div class="field">
-          <div class="row"><label>最大轮数 <abbr title="横轴上模拟的最多对话轮数">N_max</abbr></label><span class="value" id="v-nmax"></span></div>
-          <p class="abbr-hint-touch">N_max：横轴上最多模拟的轮数 N。</p>
-          <input id="N_max" type="range" min="20" max="3000" step="10" value="1200" />
-        </div>
-        <div class="field">
-          <div class="row"><label>总结频率 <abbr title="每隔多少轮触发生成/更新摘要">K</abbr></label><span class="value" id="v-k"></span></div>
-          <p class="abbr-hint-touch">K：每隔 K 轮触发生成或更新摘要（总结周期）。</p>
-          <input id="K" type="range" min="1" max="100" step="1" value="20" />
-        </div>
-        <div class="field">
-          <div class="row"><label>滑动窗口 <abbr title="窗口内参与对话与摘要保留的轮数上界">H</abbr></label><span class="value" id="v-h"></span></div>
-          <p class="abbr-hint-touch">H：窗口内参与保留的对话轮数上界（与策略 B 有关）。</p>
-          <input id="H" type="range" min="1" max="300" step="1" value="30" />
-        </div>
-      </div>
-
-      <div class="section section--tight">
-        <div class="section-title">操作</div>
-        <div class="btn-row">
-          <button id="resetBtn">恢复默认</button>
-          <button id="demoBtn">套用示例参数</button>
-        </div>
-      </div>
-
-      <details class="sidebar-details" id="details-api">
-        <summary>
-          <span class="summary-stack">
-            <span class="summary-label">API 价格</span>
-            <span class="summary-brief" id="brief-api"></span>
-          </span>
-        </summary>
-        <div class="details-body">
-          <div class="field">
-            <div class="row"><label>普通输入价 <abbr title="每百万 token 首次非缓存输入">c_in</abbr></label><span class="value" id="v-cin"></span></div>
-            <p class="abbr-hint-touch">c_in：每百万 token 的首次非缓存输入价。</p>
-            <input id="c_in" type="range" min="1" max="50" step="0.5" value="12" />
-          </div>
-          <div class="field">
-            <div class="row"><label>缓存输入价 <abbr title="每百万 token 走缓存的输入单价">c_cache</abbr></label><span class="value" id="v-ccache"></span></div>
-            <p class="abbr-hint-touch">c_cache：每百万 token 的缓存读入单价。</p>
-            <input id="c_cache" type="range" min="0" max="20" step="0.5" value="1" />
-          </div>
-          <div class="field">
-            <div class="row"><label>输出价 <abbr title="每百万 token 的生成输出单价">c_out</abbr></label><span class="value" id="v-cout"></span></div>
-            <p class="abbr-hint-touch">c_out：每百万 token 的生成输出价。</p>
-            <input id="c_out" type="range" min="1" max="100" step="0.5" value="24" />
-          </div>
-        </div>
-      </details>
-
-      <details class="sidebar-details" id="details-summary">
-        <summary>
-          <span class="summary-stack">
-            <span class="summary-label">摘要与压缩</span>
-            <span class="summary-brief" id="brief-summary"></span>
-          </span>
-        </summary>
-        <div class="details-body">
-          <div class="field">
-            <div class="row"><label>模式</label><span class="value">压缩比 R / 直接 S</span></div>
-            <select id="summaryMode">
-              <option value="R">按压缩比 R</option>
-              <option value="S">按摘要长度 S</option>
-            </select>
-          </div>
-          <div class="field" id="R-field">
-            <div class="row"><label>压缩比 <abbr title="K×A 与摘要长 S 的换算比：S = K×A/R">R</abbr></label><span class="value" id="v-r"></span></div>
-            <p class="abbr-hint-touch">R：压缩比，与摘要长大致满足 S = K×A/R。</p>
-            <input id="R" type="range" min="1" max="50" step="0.5" value="10" />
-          </div>
-          <div class="field" id="S-field" style="display:none;">
-            <div class="row"><label>摘要长度 <abbr title="压缩后摘要的 token 数">S</abbr></label><span class="value" id="v-s"></span></div>
-            <p class="abbr-hint-touch">S：压缩后摘要的 token 数（直接设 S 时）。</p>
-            <input id="S" type="range" min="0" max="50000" step="100" value="4000" />
-          </div>
-        </div>
-      </details>
-
-      <details class="sidebar-details" id="details-display">
-        <summary>
-          <span class="summary-stack">
-            <span class="summary-label">图表与显示</span>
-            <span class="summary-brief" id="brief-display"></span>
-          </span>
-        </summary>
-        <div class="details-body">
-          <div class="toggle-row"><input id="showDiff" type="checkbox" checked /><label for="showDiff">显示差值曲线</label></div>
-          <div class="toggle-row"><input id="showMarkers" type="checkbox" checked /><label for="showMarkers">标记交点</label></div>
-          <div class="toggle-row"><input id="showBoundaries" type="checkbox" checked /><label for="showBoundaries">显示 K / H 边界</label></div>
-          <div class="toggle-row"><input id="showBands" type="checkbox" checked /><label for="showBands">高亮 B 优势区间</label></div>
-        </div>
-      </details>
-    </div>
-  </aside>
-
   <main class="panel chart-panel">
     <div class="chart-header">
       <div>
@@ -941,6 +833,149 @@
       </details>
     </div>
   </main>
+
+<aside class="panel">
+    <h2>参数面板</h2>
+    <div class="panel-body">
+      <details class="sidebar-details param-glossary-details" id="glossary-details">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">参数符号速查</span>
+            <span class="summary-brief">K、H、P、c 价 等<span class="summary-brief-mobile"> · 小屏可展开</span></span>
+          </span>
+        </summary>
+        <p class="param-glossary"><kbd>K</kbd> 每几轮做摘要，<kbd>H</kbd> 窗内轮数上界，<kbd>P</kbd><kbd>A</kbd> token 数，<kbd>c</kbd> 价为元/百万 token。</p>
+      </details>
+
+      <div class="section">
+        <div class="section-title">策略</div>
+        <div class="field">
+          <label for="bMode" class="field-head">策略 B 模式</label>
+          <select id="bMode">
+            <option value="rolling">持续滚动窗口</option>
+            <option value="batch">批量裁剪</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">核心参数</div>
+        <p class="core-params-hint">先调对话体量与模拟长度；摘要周期与窗口在下方折叠。</p>
+        <div class="field">
+          <div class="row"><label>系统提示词 <abbr title="首条系统提示的 token 数">P</abbr></label><span class="value" id="v-p"></span></div>
+          <p class="abbr-hint-touch">P：首条系统消息 token 数（系统提示）。</p>
+          <input id="P" type="range" min="0" max="50000" step="100" value="10000" />
+        </div>
+        <div class="field">
+          <div class="row"><label>每轮输出 <abbr title="模型每轮回复的 token 数">A</abbr></label><span class="value" id="v-a"></span></div>
+          <p class="abbr-hint-touch">A：模型每轮回复的 token 数。</p>
+          <input id="A" type="range" min="100" max="10000" step="100" value="2000" />
+        </div>
+        <div class="field">
+          <div class="row"><label>最大轮数 <abbr title="横轴上模拟的最多对话轮数">N_max</abbr></label><span class="value" id="v-nmax"></span></div>
+          <p class="abbr-hint-touch">N_max：横轴上最多模拟的轮数 N。</p>
+          <input id="N_max" type="range" min="20" max="3000" step="10" value="1200" />
+        </div>
+      </div>
+
+      <details class="sidebar-details" id="details-rhythm">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">节奏与窗口</span>
+            <span class="summary-brief" id="brief-rhythm"></span>
+          </span>
+        </summary>
+        <div class="details-body">
+          <div class="field">
+            <div class="row"><label>总结频率 <abbr title="每隔多少轮触发生成/更新摘要">K</abbr></label><span class="value" id="v-k"></span></div>
+            <p class="abbr-hint-touch">K：每隔 K 轮触发生成或更新摘要（总结周期）。</p>
+            <input id="K" type="range" min="1" max="100" step="1" value="20" />
+          </div>
+          <div class="field">
+            <div class="row"><label>滑动窗口 <abbr title="窗口内参与对话与摘要保留的轮数上界">H</abbr></label><span class="value" id="v-h"></span></div>
+            <p class="abbr-hint-touch">H：窗口内参与保留的对话轮数上界（与策略 B 有关）。</p>
+            <input id="H" type="range" min="1" max="300" step="1" value="30" />
+          </div>
+        </div>
+      </details>
+
+      <div class="section section--tight">
+        <div class="btn-row" role="group" aria-label="快捷操作">
+          <button id="resetBtn" type="button">恢复默认</button>
+          <button id="demoBtn" type="button">套用示例参数</button>
+        </div>
+      </div>
+
+      <details class="sidebar-details" id="details-api">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">API 价格</span>
+            <span class="summary-brief" id="brief-api"></span>
+          </span>
+        </summary>
+        <div class="details-body">
+          <div class="field">
+            <div class="row"><label>普通输入价 <abbr title="每百万 token 首次非缓存输入">c_in</abbr></label><span class="value" id="v-cin"></span></div>
+            <p class="abbr-hint-touch">c_in：每百万 token 的首次非缓存输入价。</p>
+            <input id="c_in" type="range" min="1" max="50" step="0.5" value="12" />
+          </div>
+          <div class="field">
+            <div class="row"><label>缓存输入价 <abbr title="每百万 token 走缓存的输入单价">c_cache</abbr></label><span class="value" id="v-ccache"></span></div>
+            <p class="abbr-hint-touch">c_cache：每百万 token 的缓存读入单价。</p>
+            <input id="c_cache" type="range" min="0" max="20" step="0.5" value="1" />
+          </div>
+          <div class="field">
+            <div class="row"><label>输出价 <abbr title="每百万 token 的生成输出单价">c_out</abbr></label><span class="value" id="v-cout"></span></div>
+            <p class="abbr-hint-touch">c_out：每百万 token 的生成输出价。</p>
+            <input id="c_out" type="range" min="1" max="100" step="0.5" value="24" />
+          </div>
+        </div>
+      </details>
+
+      <details class="sidebar-details" id="details-summary">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">摘要与压缩</span>
+            <span class="summary-brief" id="brief-summary"></span>
+          </span>
+        </summary>
+        <div class="details-body">
+          <div class="field">
+            <div class="row"><label>模式</label><span class="value">压缩比 R / 直接 S</span></div>
+            <select id="summaryMode">
+              <option value="R">按压缩比 R</option>
+              <option value="S">按摘要长度 S</option>
+            </select>
+          </div>
+          <div class="field" id="R-field">
+            <div class="row"><label>压缩比 <abbr title="K×A 与摘要长 S 的换算比：S = K×A/R">R</abbr></label><span class="value" id="v-r"></span></div>
+            <p class="abbr-hint-touch">R：压缩比，与摘要长大致满足 S = K×A/R。</p>
+            <input id="R" type="range" min="1" max="50" step="0.5" value="10" />
+          </div>
+          <div class="field" id="S-field" style="display:none;">
+            <div class="row"><label>摘要长度 <abbr title="压缩后摘要的 token 数">S</abbr></label><span class="value" id="v-s"></span></div>
+            <p class="abbr-hint-touch">S：压缩后摘要的 token 数（直接设 S 时）。</p>
+            <input id="S" type="range" min="0" max="50000" step="100" value="4000" />
+          </div>
+        </div>
+      </details>
+
+      <details class="sidebar-details" id="details-display">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">图表与显示</span>
+            <span class="summary-brief" id="brief-display"></span>
+          </span>
+        </summary>
+        <div class="details-body">
+          <div class="toggle-row"><input id="showDiff" type="checkbox" checked /><label for="showDiff">显示差值曲线</label></div>
+          <div class="toggle-row"><input id="showMarkers" type="checkbox" checked /><label for="showMarkers">标记交点</label></div>
+          <div class="toggle-row"><input id="showBoundaries" type="checkbox" checked /><label for="showBoundaries">显示 K / H 边界</label></div>
+          <div class="toggle-row"><input id="showBands" type="checkbox" checked /><label for="showBands">高亮 B 优势区间</label></div>
+        </div>
+      </details>
+    </div>
+  </aside>
 </div>
 
   </div><script>
@@ -997,6 +1032,7 @@
 
   const briefEls = {
     api: document.getElementById('brief-api'),
+    rhythm: document.getElementById('brief-rhythm'),
     summary: document.getElementById('brief-summary'),
     display: document.getElementById('brief-display'),
   };
@@ -1004,6 +1040,7 @@
   const DEFAULTS = {
     c_in: 12, c_cache: 1, c_out: 24,
     summaryMode: 'R', R: 10, S: 4000,
+    K: 20, H: 30,
   };
 
   const fmt = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 3 });
@@ -1362,6 +1399,15 @@
     const apiDef = numEq(ci, DEFAULTS.c_in) && numEq(cc, DEFAULTS.c_cache) && numEq(co, DEFAULTS.c_out);
     const apiState = apiDef ? '默' : '改';
     briefEls.api.textContent = `${apiState} 入${fmt.format(ci)} 缓${fmt.format(cc)} 出${fmt.format(co)}`;
+
+    const kV = +els.K.value;
+    const hV = +els.H.value;
+    const rhythmDef = kV === DEFAULTS.K && hV === DEFAULTS.H;
+    const rhythmState = rhythmDef ? '默' : '改';
+    if (briefEls.rhythm) {
+      briefEls.rhythm.textContent = `${rhythmState} K=${fmt.format(kV)} · H=${fmt.format(hV)}`;
+      briefEls.rhythm.title = briefEls.rhythm.textContent;
+    }
 
     const sm = els.summaryMode.value;
     const rV = +els.R.value;
