@@ -47,6 +47,14 @@
       --space-4: 16px;
       --space-5: 24px;
       --space-6: 32px;
+      --radius-input: 6px;
+      --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+      --surface-hover: #252118;
+      --border-hover: #4a4238;
+      --border-emph: #4e463c;
+      --table-th-bg: color-mix(in srgb, var(--bg-elev) 65%, var(--border) 35%);
+      --tooltip-surface: color-mix(in srgb, var(--bg-elev) 92%, var(--border) 8%);
+      --z-tooltip: 5;
     }
     * { box-sizing: border-box; }
     html {
@@ -66,9 +74,11 @@
     @media (prefers-reduced-motion: reduce) {
       .sidebar-details,
       .sidebar-details > summary::after,
+      .modeling-details,
       .modeling-details > summary::after,
       select,
       button,
+      input[type="number"],
       .tooltip {
         transition: none;
       }
@@ -121,6 +131,8 @@
       /* stretch：避免左列较矮时，格线下方整段露出 .grid 的背板色（--border） */
       align-items: stretch;
       background: var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
     }
     .grid > .panel {
       background: var(--panel);
@@ -133,7 +145,7 @@
     }
     .panel h2 {
       margin: 0;
-      padding: var(--space-3) var(--space-4) 10px;
+      padding: var(--space-3) var(--space-4) var(--space-2);
       font-family: var(--font-serif);
       font-size: 16px;
       font-weight: 600;
@@ -149,8 +161,8 @@
       font-size: 12px;
       line-height: 1.5;
       color: var(--faint);
-      margin-bottom: 12px;
-      padding-bottom: 12px;
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-3);
       border-bottom: 1px solid var(--border);
     }
     .param-glossary kbd {
@@ -163,7 +175,7 @@
       border-bottom: 1px solid var(--border);
     }
     .section:last-child { border-bottom: 0; }
-    .section--tight { padding-top: 8px; padding-bottom: 8px; }
+    .section--tight { padding-top: var(--space-2); padding-bottom: var(--space-2); }
     .sidebar-details {
       border-top: 1px solid var(--border);
       border-left: 2px solid transparent;
@@ -180,7 +192,7 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 8px;
+      gap: var(--space-2);
       padding: var(--side-rhythm) 0;
       min-height: 2.5rem;
       color: var(--muted);
@@ -235,7 +247,7 @@
     }
     .details-body .field:last-child { margin-bottom: 0; }
     .details-body .toggle-row { margin-top: 0; }
-    .details-body .toggle-row + .toggle-row { margin-top: 6px; }
+    .details-body .toggle-row + .toggle-row { margin-top: var(--space-2); }
     .panel-body > .sidebar-details:first-of-type { border-top: 0; }
     .param-glossary-details .param-glossary {
       border-bottom: 0;
@@ -249,22 +261,22 @@
       font-weight: 600;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 8px;
+      margin-bottom: var(--space-2);
     }
-    .field { margin-bottom: 10px; }
+    .field { margin-bottom: var(--space-3); }
     .field-head {
       display: block;
       font-size: 13px;
       font-weight: 500;
       color: var(--text);
-      margin-bottom: 6px;
+      margin-bottom: var(--space-2);
     }
     .row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 6px;
+      gap: var(--space-2);
+      margin-bottom: var(--space-2);
       font-size: 13px;
     }
     label { color: var(--text); }
@@ -285,21 +297,32 @@
     input[type="range"] { width: 100%; accent-color: var(--accent); }
     input[type="number"] {
       width: 100%;
-      padding: 8px 10px;
-      border-radius: 6px;
+      padding: var(--space-2) 10px;
+      border-radius: var(--radius-input);
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
       outline: none;
+      transition: border-color 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
     /* 原生 select 需单独定制，否则在 Windows 上易残留系统外观 */
     select {
-      --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a7e70' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b9aea1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
       width: 100%;
-      padding: 8px 36px 8px 10px;
-      border-radius: 6px;
+      padding: var(--space-2) 36px var(--space-2) 10px;
+      border-radius: var(--radius-input);
       border: 1px solid var(--border);
-      background: var(--bg) var(--select-chevron) no-repeat right 10px center;
+      background-color: var(--bg);
+      background-image: var(--select-chevron);
+      background-repeat: no-repeat;
+      background-position: right 10px center;
       background-size: 16px 16px;
       color: var(--text);
       outline: none;
@@ -309,14 +332,19 @@
       color-scheme: dark;
       appearance: none;
       -webkit-appearance: none;
-      transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+      -moz-appearance: none;
+      transition: border-color 0.12s var(--ease-out), background-color 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
+    }
+    select::-ms-expand {
+      display: none;
     }
     select:hover {
-      border-color: #4e463c;
+      border-color: var(--border-emph);
+      background-color: var(--surface-hover);
     }
     select:focus-visible {
       border-color: var(--focus-ring);
-      box-shadow: 0 0 0 1px var(--focus-ring);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus-ring) 55%, transparent);
     }
     select option {
       background: var(--bg-elev);
@@ -325,31 +353,36 @@
     .toggle-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: var(--space-2);
       flex-wrap: wrap;
       color: var(--muted);
       font-size: 14px;
-      margin-top: 8px;
+      margin-top: var(--space-2);
     }
     .toggle-row input { transform: translateY(1px); }
     .btn-row {
       display: flex;
-      gap: 8px;
+      gap: var(--space-2);
       flex-wrap: wrap;
-      margin-top: 6px;
+      margin-top: var(--space-2);
     }
     button {
       border: 1px solid var(--border);
       background: var(--bg);
       color: var(--text);
-      padding: 8px 12px;
-      border-radius: 6px;
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-input);
       font-size: 13px;
       cursor: pointer;
-      transition: background 0.12s ease, border-color 0.12s ease;
+      transition: background 0.12s var(--ease-out), border-color 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out);
     }
-    button:hover { background: #252118; border-color: #4a4238; }
-    button:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--focus-ring); }
+    button:hover { background: var(--surface-hover); border-color: var(--border-hover); }
+    button:active { background: color-mix(in srgb, var(--surface-hover) 88%, #000 12%); }
+    button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus-ring) 55%, transparent);
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
     .chart-panel {
       padding: 0;
       display: flex;
@@ -401,7 +434,7 @@
     .legend {
       display: flex;
       flex-wrap: wrap;
-      gap: var(--space-2) 14px;
+      gap: var(--space-2) var(--space-4);
       padding: 0 var(--space-4) var(--space-3);
       color: var(--chart-tick);
       font-size: 12px;
@@ -409,7 +442,7 @@
     .legend span {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--space-2);
     }
     .dot {
       width: 10px; height: 10px; border-radius: 999px;
@@ -463,7 +496,7 @@
       font-size: 13px;
       font-variant-numeric: tabular-nums;
     }
-    th { color: var(--text); font-weight: 600; background: #1c1a16; }
+    th { color: var(--text); font-weight: 600; background: var(--table-th-bg); }
     td { color: var(--text); }
     .good { color: var(--good); }
     .bad { color: var(--danger); }
@@ -485,7 +518,9 @@
       color: var(--faint);
       font-size: 12px;
       padding: var(--space-2) 0;
+      transition: color 0.12s var(--ease-out);
     }
+    .modeling-details > summary:hover { color: var(--muted); }
     .modeling-details > summary::-webkit-details-marker { display: none; }
     .modeling-details > summary::after {
       content: "";
@@ -510,17 +545,17 @@
     .tooltip {
       position: absolute;
       pointer-events: none;
-      background: #201d18;
+      background: var(--tooltip-surface);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
+      border-radius: var(--radius-input);
+      padding: var(--space-2) 10px;
       font-size: 12px;
       color: var(--text);
       opacity: 0;
       transform: translate(-50%, -110%);
-      transition: opacity 0.08s ease;
+      transition: opacity 0.15s var(--ease-out);
       white-space: nowrap;
-      z-index: 5;
+      z-index: var(--z-tooltip);
     }
     .tooltip .muted { color: var(--muted); }
     .sr-only {
@@ -543,8 +578,8 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 10px 12px;
-      margin-top: 8px;
+      gap: var(--space-2) var(--space-3);
+      margin-top: var(--space-2);
     }
     .chart-probe-row label { font-size: 13px; }
     .chart-probe-row input[type="number"] {
@@ -556,26 +591,30 @@
       font-size: 12px;
       line-height: 1.5;
       color: var(--faint);
-      margin: 0 0 6px 0;
+      margin: 0 0 var(--space-2) 0;
       max-width: 72ch;
     }
     .chart-probe-readout {
-      margin-top: 10px;
-      padding: 10px 12px;
+      margin-top: var(--space-3);
+      padding: var(--space-2) var(--space-3);
       font-size: 13px;
       line-height: 1.5;
       color: var(--text);
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: var(--radius-input);
     }
     .chart-probe-row button:disabled { opacity: 0.4; cursor: not-allowed; }
-    .chart-probe-legend { font-size: 12px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; }
+    .chart-probe-legend { font-size: 12px; color: var(--muted); margin: var(--space-2) 0 0; line-height: 1.5; }
     #chart {
       min-width: 0;
     }
-    .chart-probe h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text); }
-    input[type="number"]:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
+    .chart-probe h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.01em; }
+    input[type="number"]:focus-visible {
+      outline: none;
+      border-color: var(--focus-ring);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus-ring) 55%, transparent);
+    }
     a:focus-visible, summary:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
     @media (max-width: 1120px) {
       .grid { grid-template-columns: 1fr; }
@@ -880,26 +919,26 @@
     </div>
 
     <div class="dashboard-detail">
-    <div class="analysis" id="analysis"></div>
+      <div class="analysis" id="analysis"></div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>区间</th>
-            <th>起点 N</th>
-            <th>终点 N</th>
-            <th>长度</th>
-            <th>更便宜</th>
-          </tr>
-        </thead>
-        <tbody id="intervalTable"></tbody>
-      </table>
-    </div>
-    <details class="modeling-details">
-      <summary>建模与假设</summary>
-      <p class="modeling-body">A：连续前缀缓存。B 滚动窗满后按保守模型近似为每轮重排，缓存命中减弱。B 批量裁剪：非裁剪轮可走前缀缓存在裁剪/总结轮重置。本页用于扫阈值与区间、辅助调参。</p>
-    </details>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>区间</th>
+              <th>起点 N</th>
+              <th>终点 N</th>
+              <th>长度</th>
+              <th>更便宜</th>
+            </tr>
+          </thead>
+          <tbody id="intervalTable"></tbody>
+        </table>
+      </div>
+      <details class="modeling-details">
+        <summary>建模与假设</summary>
+        <p class="modeling-body">A：连续前缀缓存。B 滚动窗满后按保守模型近似为每轮重排，缓存命中减弱。B 批量裁剪：非裁剪轮可走前缀缓存在裁剪/总结轮重置。本页用于扫阈值与区间、辅助调参。</p>
+      </details>
     </div>
   </main>
 </div>
@@ -1244,8 +1283,8 @@
       html += `<circle data-n="${d.n}" data-a="${d.a}" data-b="${d.b}" data-d="${d.d}" cx="${xx}" cy="${y(d.b)}" r="5" fill="var(--chart-b)" opacity="0" />`;
     });
 
-    html += `<text x="${W / 2}" y="${H - 14}" fill="rgba(185,174,163,0.9)" font-size="12" text-anchor="middle">轮数 N</text>`;
-    html += `<text x="18" y="${H / 2}" fill="rgba(185,174,163,0.9)" font-size="12" text-anchor="middle" transform="rotate(-90 18 ${H / 2})">累计成本（元）</text>`;
+    html += `<text x="${W / 2}" y="${H - 14}" fill="var(--chart-tick)" font-size="12" text-anchor="middle">轮数 N</text>`;
+    html += `<text x="18" y="${H / 2}" fill="var(--chart-tick)" font-size="12" text-anchor="middle" transform="rotate(-90 18 ${H / 2})">累计成本（元）</text>`;
 
     svg.innerHTML = html;
 
