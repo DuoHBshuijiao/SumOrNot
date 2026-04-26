@@ -71,7 +71,7 @@ $$
 
 于是第 $t$ 轮**输入**侧 token 中，$A$ 按 $c_{\mathrm{in}}$，$P+(t-2)A$ 按 $c_{\mathrm{cache}}$。对 $N$ 轮**累计**（含输出）在「元」尺度下为（与 `costA` 闭式一致）：
 
-$$
+```math
 \mathcal{C}_A(N) = 10^{-6} \left[
 P\, c_{\mathrm{in}}
 + (N-1) P\, c_{\mathrm{cache}}
@@ -79,7 +79,7 @@ P\, c_{\mathrm{in}}
 + \frac{(N-1)(N-2)}{2}\, A\, c_{\mathrm{cache}}
 + N A\, c_{\mathrm{out}}
 \right].
-$$
+```
 
 该式是单轮求和
 $\sum_{t=1}^{N} \left( C_{\mathrm{in}}^{(A)}(t) + C_{\mathrm{out}} \right)$ 的**闭式**，其中 $\frac{(N-1)(N-2)}{2} A$ 项来自等差数列 $\sum_{t=2}^{N} (t-2)A$ 的缓存段长度之和。
@@ -151,9 +151,9 @@ $$
 
 **定义：** 给定 $N>20$ 及其它参数，使策略 B1（或 B2）**累计总成本不高于**策略 A 的最大摘要 token 上界，记
 
-$$
-S_{\max}^{(1)}(N) = \sup \left\{ S \ge 0 \mathrel{:} \mathcal{C}_{B1}(N, S) \le \mathcal{C}_A(N) \right\},
-$$
+```math
+S_{\max}^{(1)}(N) = \sup \{ S \ge 0 \mathrel{:} \mathcal{C}_{B1}(N, S) \le \mathcal{C}_A(N) \},
+```
 
 B2 同理得 $S_{\max}^{(2)}(N)$。下标表示依赖 $N$ 与所有价格、$P$、$A$、$K$、$H$。
 
@@ -167,9 +167,9 @@ $$
 
 对 **B2**，因缓存命中使 $\mathcal{C}_{B2}$ 对 $S$ **非处处仿射**（有二次项的交叉与分段），**闭式** $S_{\max}^{(2)}$ 更宜写为
 
-$$
-S_{\max}^{(2)}(N) = \max \left\{ S \mathrel{:} \mathcal{C}_{B2}(N,S) - \mathcal{C}_A(N) \le 0 \right\},
-$$
+```math
+S_{\max}^{(2)}(N) = \max \{ S \mathrel{:} \mathcal{C}_{B2}(N,S) - \mathcal{C}_A(N) \le 0 \},
+```
 
 在固定其它参数时通过**一维单调**搜索或分段解析联立求解；**本页工具**则直接以数值差分 `d = B - A` 回答「是否不劣于 A」，见第6 节。
 
