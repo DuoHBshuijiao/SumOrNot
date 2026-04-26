@@ -398,6 +398,60 @@
       z-index: 5;
     }
     .tooltip .muted { color: var(--muted); }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .chart-probe {
+      padding: 10px 16px 8px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(20, 20, 22, 0.6);
+    }
+    .chart-probe-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 12px;
+      margin-top: 8px;
+    }
+    .chart-probe-row label { font-size: 13px; }
+    .chart-probe-row input[type="number"] {
+      width: 6.5rem;
+      min-height: 40px;
+      font-variant-numeric: tabular-nums;
+    }
+    .chart-probe-hint, .chart-probe-sr {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--faint);
+      margin: 0 0 6px 0;
+      max-width: 72ch;
+    }
+    .chart-probe-readout {
+      margin-top: 10px;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+    .chart-probe-row button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .chart-probe-legend { font-size: 12px; color: var(--muted); margin: 6px 0 0; line-height: 1.5; }
+    #chart {
+      min-width: 0;
+    }
+    .chart-probe h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text); }
+    input[type="number"]:focus-visible { outline: none; box-shadow: 0 0 0 2px #52525b; }
+    a:focus-visible, summary:focus-visible { outline: none; box-shadow: 0 0 0 2px #52525b; }
     @media (max-width: 1120px) {
       .grid { grid-template-columns: 1fr; }
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
@@ -588,9 +642,48 @@
       <div class="meta" id="currentSummary"></div>
     </div>
 
+    <p id="chartVisDesc" class="sr-only">折线图。横轴为轮数，纵轴为人民币累计成本。系列含义见图下图例。若仅使用键盘或读屏，请用下方探点区输入轮数 N 或使用上一条、下一条，勿依赖图上透明热点。</p>
+
+    <div
+      class="chart-probe"
+      id="chart-probe-region"
+      role="region"
+      aria-labelledby="chart-probe-title"
+      aria-describedby="chartVisDesc"
+    >
+      <h3 id="chart-probe-title">按轮次探点（键盘与读屏）</h3>
+      <p class="chart-probe-hint" id="chart-probe-hint">图表上的透明大圆为鼠标探点用热点，不接收键盘；请用此处输入轮数 N 或上一条、下一条，获取与悬停等效的累计成本与差值读数。</p>
+      <div class="chart-probe-row">
+        <label for="chartProbeN">轮数 <span aria-hidden="true">N</span><span class="sr-only"> N </span></label>
+        <input
+          type="number"
+          id="chartProbeN"
+          name="chartProbeN"
+          min="1"
+          max="1200"
+          step="1"
+          value="1"
+          inputmode="numeric"
+          aria-describedby="chart-probe-hint"
+        />
+        <button type="button" id="chartProbePrev">上一条</button>
+        <button type="button" id="chartProbeNext">下一条</button>
+      </div>
+      <p class="chart-probe-legend" id="chart-probe-legend">A：全缓存；B：当前策略。探点 N 不超过左侧「最大轮数 N_max」。</p>
+      <div class="chart-probe-readout" id="chartProbeReadout" role="status" aria-live="polite" aria-atomic="true">加载中</div>
+    </div>
+
     <div class="chart-wrap">
       <div class="tooltip" id="tooltip"></div>
-      <svg id="chart" viewBox="0 0 1160 600" preserveAspectRatio="none" aria-label="成本曲线图"></svg>
+      <svg
+        id="chart"
+        viewBox="0 0 1160 600"
+        preserveAspectRatio="none"
+        role="img"
+        focusable="false"
+        aria-label="折线图，策略 A 与 B 的累计成本及差值"
+        aria-describedby="chartVisDesc chart-probe-legend"
+      ></svg>
     </div>
 
     <div class="legend">
@@ -689,6 +782,10 @@
     vs: document.getElementById('v-s'),
     rField: document.getElementById('R-field'),
     sField: document.getElementById('S-field'),
+    chartProbeN: document.getElementById('chartProbeN'),
+    chartProbePrev: document.getElementById('chartProbePrev'),
+    chartProbeNext: document.getElementById('chartProbeNext'),
+    chartProbeReadout: document.getElementById('chartProbeReadout'),
   };
 
   const briefEls = {
@@ -704,6 +801,53 @@
 
   const fmt = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 3 });
   const money = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  let lastPoints = null;
+  let lastP = null;
+
+  function formatProbeReadout(d) {
+    if (!d) return '暂无该轮数据。';
+    const a = money.format(d.a);
+    const b = money.format(d.b);
+    const sign = d.d >= 0 ? '+' : '';
+    return `N 为 ${d.n}。策略 A 累计成本 ${a} 元。策略 B 累计成本 ${b} 元。B 与 A 的差为 ${sign}${money.format(d.d)} 元。`;
+  }
+
+  function getChartProbeNClamped() {
+    if (!els.chartProbeN || !lastP) return 1;
+    const max = lastP.N_max;
+    if (max < 1) return 1;
+    let n = Math.round(Number(els.chartProbeN.value));
+    if (Number.isNaN(n)) n = 1;
+    return Math.max(1, Math.min(max, n));
+  }
+
+  function setChartProbeN(n) {
+    if (!els.chartProbeN || !lastP) return;
+    const max = lastP.N_max;
+    const v = Math.max(1, Math.min(max, n));
+    els.chartProbeN.value = String(v);
+    updateChartProbe();
+  }
+
+  function updateChartProbe() {
+    if (!els.chartProbeN || !els.chartProbeReadout || !lastPoints || !lastP) return;
+    const max = lastP.N_max;
+    if (max < 1) {
+      els.chartProbeReadout.textContent = '请先在左侧将最大轮数 N_max 设为至少 1。';
+      if (els.chartProbePrev) els.chartProbePrev.disabled = true;
+      if (els.chartProbeNext) els.chartProbeNext.disabled = true;
+      return;
+    }
+    els.chartProbeN.min = 1;
+    els.chartProbeN.max = max;
+    const n = getChartProbeNClamped();
+    els.chartProbeN.value = String(n);
+    const pt = lastPoints[n - 1];
+    els.chartProbeReadout.textContent = pt ? formatProbeReadout(pt) : '暂无该轮数据。';
+    if (els.chartProbePrev) els.chartProbePrev.disabled = n <= 1;
+    if (els.chartProbeNext) els.chartProbeNext.disabled = n >= max;
+  }
 
   function params() {
     const c_in = +els.c_in.value;
@@ -873,6 +1017,7 @@
     const intervals = findIntervals(points, p.K);
 
     let html = '';
+    html += '<desc id="chartSvgDesc"></desc>';
     html += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="#141415" />`;
 
     if (els.showBands.checked) {
@@ -932,7 +1077,17 @@
 
     svg.innerHTML = html;
 
+    const descEl = svg.querySelector('desc#chartSvgDesc');
+    if (descEl) {
+      const diffOn = els.showDiff.checked;
+      const bandsOn = els.showBands.checked;
+      const bOn = els.showBoundaries.checked;
+      descEl.textContent = `横轴自第 1 轮至第 ${p.N_max} 轮，纵轴为人民币累计元。实线分别为：策略 A 全缓存、策略 B 当前模式。${diffOn ? '虚线为 B 与 A 的差。' : '当前已关闭差值虚线。'}${bandsOn ? '淡色纵带为 B 不高于 A 的区间。' : '未高亮 B 优势区间。'}${bOn ? '另有竖线标出 K 与 H 位置。' : '未显示 K 与 H 竖线。'}图上有透明大圆，仅对鼠标可悬停显示浮动提示，不能用键盘选点；请使用图象上方控件的 N 与上一条、下一条。`;
+    }
+    if (els.tooltip) els.tooltip.setAttribute('aria-hidden', 'true');
+
     [...svg.querySelectorAll('circle[data-n]')].forEach(c => {
+      c.setAttribute('aria-hidden', 'true');
       c.style.pointerEvents = 'auto';
       c.addEventListener('mousemove', evt => {
         const rect = svg.getBoundingClientRect();
@@ -1091,8 +1246,12 @@
       <br><span style="color:var(--muted);font-size:12px;opacity:0.9">N ≤ K 时未触发首摘，累计差值为 0；B 优势区间与占比仅针对 N &gt; K（首摘已发生）。</span>
     `;
 
+    lastPoints = points;
+    lastP = p;
+
     renderTable(intervals, points);
     drawChart(p, series);
+    updateChartProbe();
   }
 
   function resetDefaults() {
@@ -1131,9 +1290,26 @@
   }
 
   [...document.querySelectorAll('input, select')].forEach(el => {
+    if (el.id === 'chartProbeN') return;
     el.addEventListener('input', render);
     el.addEventListener('change', render);
   });
+  if (els.chartProbeN) {
+    els.chartProbeN.addEventListener('input', () => updateChartProbe());
+    els.chartProbeN.addEventListener('change', () => updateChartProbe());
+  }
+  if (els.chartProbePrev) {
+    els.chartProbePrev.addEventListener('click', () => {
+      if (!lastP) return;
+      setChartProbeN(getChartProbeNClamped() - 1);
+    });
+  }
+  if (els.chartProbeNext) {
+    els.chartProbeNext.addEventListener('click', () => {
+      if (!lastP) return;
+      setChartProbeN(getChartProbeNClamped() + 1);
+    });
+  }
   els.resetBtn.addEventListener('click', resetDefaults);
   els.demoBtn.addEventListener('click', applyDemo);
 
