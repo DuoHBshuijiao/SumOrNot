@@ -5,31 +5,32 @@
   <title>对话成本策略比较器</title>
   <style>
     :root {
-      --bg: #0b1020;
-      --panel: rgba(255,255,255,0.06);
-      --panel-2: rgba(255,255,255,0.08);
-      --border: rgba(255,255,255,0.12);
-      --text: #e8eefc;
-      --muted: #aeb9d6;
-      --accent: #7aa2ff;
-      --accent-2: #55d6be;
-      --danger: #ff8a8a;
-      --warning: #ffd36e;
-      --good-fill: rgba(85,214,190,0.10);
-      --bad-fill: rgba(255,138,138,0.08);
-      --grid: rgba(255,255,255,0.08);
-      --shadow: 0 20px 60px rgba(0,0,0,0.35);
-      --radius: 20px;
+      --bg: #0f0f10;
+      --bg-elev: #161618;
+      --panel: #161618;
+      --border: #2a2a2d;
+      --text: #e4e4e7;
+      --muted: #a1a1aa;
+      --faint: #71717a;
+      --accent: #c4c4cc;
+      --accent-2: #a8a29e;
+      --danger: #b87c7c;
+      --warning: #a8a29e;
+      --good: #8f9a8e;
+      --good-fill: rgba(100, 110, 95, 0.14);
+      --bad-fill: rgba(110, 80, 80, 0.1);
+      --radius: 8px;
+      --chart-a: #8b93a0;
+      --chart-b: #a89a8a;
+      --chart-diff: #9a7a7a;
+      --chart-marker: #a1a1aa;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(122,162,255,0.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(85,214,190,0.12), transparent 26%),
-        linear-gradient(180deg, #09101f, #0b1020 45%, #0c1224);
+      background: var(--bg);
       color: var(--text);
     }
     .wrap {
@@ -43,90 +44,222 @@
       gap: 12px;
       justify-content: space-between;
       align-items: end;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
     }
     h1 {
       margin: 0;
-      font-size: clamp(28px, 3vw, 42px);
-      letter-spacing: 0.2px;
+      font-size: clamp(22px, 2.2vw, 32px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
     }
     .subtitle {
       color: var(--muted);
-      margin-top: 6px;
+      margin-top: 8px;
       font-size: 14px;
       max-width: 980px;
       line-height: 1.55;
     }
     .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: rgba(255,255,255,0.05);
-      color: var(--muted);
-      font-size: 13px;
+      color: var(--faint);
+      font-size: 12px;
       white-space: nowrap;
+      font-variant-numeric: tabular-nums;
     }
     .grid {
       display: grid;
       grid-template-columns: 380px minmax(0, 1fr);
-      gap: 18px;
+      gap: 1px;
       align-items: start;
+      background: var(--border);
+    }
+    .grid > .panel {
+      background: var(--panel);
     }
     .panel {
       background: var(--panel);
-      backdrop-filter: blur(14px);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      box-shadow: var(--shadow);
       overflow: hidden;
     }
     .panel h2 {
       margin: 0;
-      padding: 18px 18px 12px;
-      font-size: 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 14px 16px 10px;
+      font-size: 15px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
     }
-    .panel-body { padding: 16px 18px 18px; }
+    .panel-body {
+      --side-rhythm: 10px;
+      --side-sep: 12px;
+      padding: 12px 16px 16px;
+    }
+    .param-glossary {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--faint);
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .param-glossary kbd {
+      font-family: inherit;
+      font-size: 11px;
+      color: var(--muted);
+    }
     .section {
-      padding: 14px 0;
-      border-bottom: 1px dashed rgba(255,255,255,0.10);
+      padding: var(--side-rhythm) 0 var(--side-sep);
+      border-bottom: 1px solid var(--border);
     }
     .section:last-child { border-bottom: 0; }
-    .section-title {
-      font-size: 13px;
-      color: #c7d2ee;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      margin-bottom: 10px;
-      text-transform: uppercase;
+    .section--tight { padding-top: 8px; padding-bottom: 8px; }
+    .sidebar-details {
+      border-top: 1px solid var(--border);
+      border-left: 2px solid transparent;
+      margin-left: -2px;
+      padding-left: 2px;
+      transition: border-color 0.12s ease, background 0.12s ease;
     }
-    .field { margin-bottom: 12px; }
+    .sidebar-details[open] {
+      border-left-color: rgba(161, 161, 170, 0.35);
+      background: linear-gradient(90deg, rgba(161, 161, 170, 0.05) 0, transparent 52%);
+    }
+    .sidebar-details > summary {
+      list-style: none;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      padding: var(--side-rhythm) 0;
+      min-height: 2.5rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .sidebar-details > summary::-webkit-details-marker { display: none; }
+    .summary-stack {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 3px;
+    }
+    .summary-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.01em;
+    }
+    .summary-brief {
+      font-size: 11px;
+      font-weight: 500;
+      line-height: 1.35;
+      color: var(--faint);
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sidebar-details[open] > summary .summary-label { color: var(--text); }
+    .sidebar-details[open] > summary .summary-brief { color: rgba(161, 161, 170, 0.95); }
+    .summary-brief-mobile { display: none; }
+    .sidebar-details > summary::after {
+      content: "";
+      width: 0;
+      height: 0;
+      margin-top: 4px;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid var(--faint);
+      flex-shrink: 0;
+      transition: transform 0.15s ease;
+    }
+    .sidebar-details[open] > summary::after { transform: rotate(180deg); }
+    .details-body {
+      padding: 2px 0 var(--side-sep);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .details-body .field:last-child { margin-bottom: 0; }
+    .details-body .toggle-row { margin-top: 0; }
+    .details-body .toggle-row + .toggle-row { margin-top: 6px; }
+    .panel-body > .sidebar-details:first-of-type { border-top: 0; }
+    .param-glossary-details .param-glossary {
+      border-bottom: 0;
+      margin-bottom: 0;
+      padding-bottom: 0;
+      margin-top: 2px;
+    }
+    .section-title {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .field { margin-bottom: 10px; }
     .row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-      margin-bottom: 7px;
-      font-size: 14px;
+      margin-bottom: 6px;
+      font-size: 13px;
     }
     label { color: var(--text); }
+    label dfn, abbr[title] { border-bottom: none; text-decoration: underline dotted; text-decoration-color: var(--faint); cursor: help; }
+    .abbr-hint-touch {
+      display: none;
+      margin: 0 0 8px;
+      padding: 0;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--faint);
+    }
     .value {
       color: var(--muted);
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
-    input[type="range"] { width: 100%; accent-color: var(--accent); }
-    input[type="number"], select {
+    input[type="range"] { width: 100%; accent-color: var(--faint); }
+    input[type="number"] {
       width: 100%;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.06);
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
       color: var(--text);
       outline: none;
+    }
+    /* 原生 select 需单独定制，否则在 Windows 上易残留系统外观 */
+    select {
+      --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      width: 100%;
+      padding: 8px 36px 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg) var(--select-chevron) no-repeat right 10px center;
+      background-size: 16px 16px;
+      color: var(--text);
+      outline: none;
+      font: inherit;
+      line-height: 1.4;
+      cursor: pointer;
+      color-scheme: dark;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+    }
+    select:hover {
+      border-color: #3f3f46;
+    }
+    select:focus-visible {
+      border-color: #52525b;
+      box-shadow: 0 0 0 1px #52525b;
+    }
+    select option {
+      background: var(--bg-elev);
+      color: var(--text);
     }
     .toggle-row {
       display: flex;
@@ -140,21 +273,22 @@
     .toggle-row input { transform: translateY(1px); }
     .btn-row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
-      margin-top: 8px;
+      margin-top: 6px;
     }
     button {
-      border: 1px solid rgba(255,255,255,0.14);
-      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      background: var(--bg);
       color: var(--text);
-      padding: 10px 14px;
-      border-radius: 12px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
       cursor: pointer;
-      transition: transform 0.08s ease, background 0.12s ease;
+      transition: background 0.12s ease, border-color 0.12s ease;
     }
-    button:hover { background: rgba(255,255,255,0.10); }
-    button:active { transform: translateY(1px); }
+    button:hover { background: #1c1c1f; border-color: #3f3f46; }
+    button:focus-visible { outline: none; box-shadow: 0 0 0 1px #52525b; }
     .chart-panel { padding: 0; }
     .chart-header {
       display: flex;
@@ -162,32 +296,33 @@
       gap: 12px;
       align-items: center;
       flex-wrap: wrap;
-      padding: 18px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
     }
+    .chart-header h2 { border: 0; padding: 0; margin: 0; font-size: 15px; font-weight: 600; }
     .chart-header .meta {
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1.5;
     }
     .chart-wrap {
       position: relative;
-      padding: 14px 14px 8px;
+      padding: 12px 12px 6px;
     }
     svg {
       width: 100%;
       height: auto;
       display: block;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.03);
+      border-radius: 4px;
+      background: #121214;
     }
     .legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px 16px;
-      padding: 0 18px 16px;
+      gap: 10px 14px;
+      padding: 0 16px 12px;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 12px;
     }
     .legend span {
       display: inline-flex;
@@ -201,27 +336,27 @@
     .kpi-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      padding: 0 18px 18px;
+      border-top: 1px solid var(--border);
     }
     .kpi {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 16px;
-      padding: 14px;
+      padding: 12px 16px;
+      border-right: 1px solid var(--border);
+      background: var(--bg);
     }
-    .kpi .label { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
-    .kpi .value { color: var(--text); font-size: 22px; font-weight: 700; }
-    .kpi .hint { margin-top: 6px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .kpi:last-child { border-right: 0; }
+    .kpi .label { color: var(--faint); font-size: 11px; margin-bottom: 4px; font-weight: 500; }
+    .kpi .value { color: var(--text); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .kpi .hint { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.45; }
     .analysis {
-      padding: 18px;
-      border-top: 1px solid rgba(255,255,255,0.08);
+      padding: 14px 16px;
+      border-top: 1px solid var(--border);
       color: var(--text);
-      line-height: 1.65;
+      line-height: 1.6;
+      font-size: 14px;
     }
-    .analysis strong { color: #fff; }
+    .analysis strong { color: var(--text); font-weight: 600; }
     .table-wrap {
-      padding: 0 18px 18px;
+      padding: 0 16px 16px;
       overflow: auto;
     }
     table {
@@ -232,31 +367,30 @@
     th, td {
       text-align: left;
       padding: 10px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
       font-variant-numeric: tabular-nums;
     }
-    th { color: #dfe7ff; font-weight: 700; background: rgba(255,255,255,0.03); }
+    th { color: var(--text); font-weight: 600; background: #141415; }
     td { color: var(--text); }
-    .good { color: var(--accent-2); }
+    .good { color: var(--good); }
     .bad { color: var(--danger); }
     .warn { color: var(--warning); }
     .footer-note {
-      padding: 0 18px 18px;
-      color: var(--muted);
-      font-size: 12px;
+      padding: 0 16px 16px;
+      color: var(--faint);
+      font-size: 11px;
       line-height: 1.55;
     }
     .tooltip {
       position: absolute;
       pointer-events: none;
-      background: rgba(8, 13, 27, 0.96);
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.45);
-      border-radius: 14px;
-      padding: 10px 12px;
+      background: #1c1c1f;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
       font-size: 12px;
-      color: #ecf2ff;
+      color: var(--text);
       opacity: 0;
       transform: translate(-50%, -110%);
       transition: opacity 0.08s ease;
@@ -267,10 +401,40 @@
     @media (max-width: 1120px) {
       .grid { grid-template-columns: 1fr; }
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .kpi { border-right: 0; }
+      .kpi:nth-child(odd) { border-right: 1px solid var(--border); }
     }
     @media (max-width: 640px) {
       .wrap { padding: 14px; }
       .kpi-grid { grid-template-columns: 1fr; }
+      .kpi { border-right: 0; border-bottom: 1px solid var(--border); }
+      .kpi:nth-child(odd) { border-right: 0; }
+      .kpi:last-child { border-bottom: 0; }
+    }
+    /* 窄屏 / 触摸：不依赖悬停，缩写旁显示常驻短说明；略增大可点区域 */
+    @media (max-width: 959px) {
+      .summary-brief-mobile { display: inline; }
+    }
+    @media (max-width: 720px) {
+      .abbr-hint-touch { display: block; }
+      label dfn, abbr[title] { text-decoration: none; cursor: default; }
+      .sidebar-details > summary {
+        min-height: 44px;
+        padding: 12px 0;
+        touch-action: manipulation;
+      }
+      .toggle-row {
+        min-height: 44px;
+        margin-top: 0;
+        padding: 4px 0;
+        align-items: center;
+      }
+      .toggle-row + .toggle-row { margin-top: 0; }
+      .field { margin-bottom: 12px; }
+      .btn-row button {
+        min-height: 44px;
+        padding: 10px 14px;
+      }
     }
   </style>
 </head>
@@ -286,8 +450,18 @@
   <aside class="panel">
     <h2>参数面板</h2>
     <div class="panel-body">
+      <details class="sidebar-details param-glossary-details" id="glossary-details">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">参数符号速查</span>
+            <span class="summary-brief">K、H、P、c 价 等<span class="summary-brief-mobile"> · 小屏可展开</span></span>
+          </span>
+        </summary>
+        <p class="param-glossary">速查：<kbd>K</kbd> 为总结周期（每 <kbd>K</kbd> 轮触发摘要）；<kbd>H</kbd> 为窗口内参与保留的轮数上界；<kbd>P</kbd> / <kbd>A</kbd> 为系统提示与单轮输出 token 数；<kbd>c_in</kbd> <kbd>c_cache</kbd> <kbd>c_out</kbd> 为每百万 token 的输入/缓存/输出价（元）。</p>
+      </details>
+
       <div class="section">
-        <div class="section-title">策略选择</div>
+        <div class="section-title">策略</div>
         <div class="field">
           <div class="row"><label>策略 B 模式</label><span class="value">两种可切换</span></div>
           <select id="bMode">
@@ -298,91 +472,118 @@
       </div>
 
       <div class="section">
-        <div class="section-title">API 价格（元 / 百万 token）</div>
+        <div class="section-title">核心参数</div>
         <div class="field">
-          <div class="row"><label>普通输入价格 c_in</label><span class="value" id="v-cin"></span></div>
-          <input id="c_in" type="range" min="1" max="50" step="0.5" value="12" />
-        </div>
-        <div class="field">
-          <div class="row"><label>缓存输入价格 c_cache</label><span class="value" id="v-ccache"></span></div>
-          <input id="c_cache" type="range" min="0" max="20" step="0.5" value="1" />
-        </div>
-        <div class="field">
-          <div class="row"><label>输出价格 c_out</label><span class="value" id="v-cout"></span></div>
-          <input id="c_out" type="range" min="1" max="100" step="0.5" value="24" />
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">对话基础参数</div>
-        <div class="field">
-          <div class="row"><label>系统提示词 P</label><span class="value" id="v-p"></span></div>
+          <div class="row"><label>系统提示词 <abbr title="首条系统提示的 token 数">P</abbr></label><span class="value" id="v-p"></span></div>
+          <p class="abbr-hint-touch">P：首条系统消息 token 数（系统提示）。</p>
           <input id="P" type="range" min="0" max="50000" step="100" value="10000" />
         </div>
         <div class="field">
-          <div class="row"><label>每轮输出 A</label><span class="value" id="v-a"></span></div>
+          <div class="row"><label>每轮输出 <abbr title="模型每轮回复的 token 数">A</abbr></label><span class="value" id="v-a"></span></div>
+          <p class="abbr-hint-touch">A：模型每轮回复的 token 数。</p>
           <input id="A" type="range" min="100" max="10000" step="100" value="2000" />
         </div>
         <div class="field">
-          <div class="row"><label>最大轮数 N_max</label><span class="value" id="v-nmax"></span></div>
+          <div class="row"><label>最大轮数 <abbr title="横轴上模拟的最多对话轮数">N_max</abbr></label><span class="value" id="v-nmax"></span></div>
+          <p class="abbr-hint-touch">N_max：横轴上最多模拟的轮数 N。</p>
           <input id="N_max" type="range" min="20" max="3000" step="10" value="1200" />
         </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">策略 B 参数</div>
         <div class="field">
-          <div class="row"><label>总结频率 K</label><span class="value" id="v-k"></span></div>
+          <div class="row"><label>总结频率 <abbr title="每隔多少轮触发生成/更新摘要">K</abbr></label><span class="value" id="v-k"></span></div>
+          <p class="abbr-hint-touch">K：每隔 K 轮触发生成或更新摘要（总结周期）。</p>
           <input id="K" type="range" min="1" max="100" step="1" value="20" />
         </div>
         <div class="field">
-          <div class="row"><label>滑动窗口 H</label><span class="value" id="v-h"></span></div>
+          <div class="row"><label>滑动窗口 <abbr title="窗口内参与对话与摘要保留的轮数上界">H</abbr></label><span class="value" id="v-h"></span></div>
+          <p class="abbr-hint-touch">H：窗口内参与保留的对话轮数上界（与策略 B 有关）。</p>
           <input id="H" type="range" min="1" max="300" step="1" value="30" />
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-title">摘要控制</div>
-        <div class="field">
-          <div class="row"><label>模式</label><span class="value">压缩比 R / 直接输入 S</span></div>
-          <select id="summaryMode">
-            <option value="R">按压缩比 R</option>
-            <option value="S">按摘要长度 S</option>
-          </select>
-        </div>
-        <div class="field" id="R-field">
-          <div class="row"><label>压缩比 R</label><span class="value" id="v-r"></span></div>
-          <input id="R" type="range" min="1" max="50" step="0.5" value="10" />
-        </div>
-        <div class="field" id="S-field" style="display:none;">
-          <div class="row"><label>摘要长度 S</label><span class="value" id="v-s"></span></div>
-          <input id="S" type="range" min="0" max="50000" step="100" value="4000" />
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="section-title">显示选项</div>
-        <div class="toggle-row"><input id="showDiff" type="checkbox" checked /><label for="showDiff">显示差值曲线</label></div>
-        <div class="toggle-row"><input id="showMarkers" type="checkbox" checked /><label for="showMarkers">标记交点</label></div>
-        <div class="toggle-row"><input id="showBoundaries" type="checkbox" checked /><label for="showBoundaries">显示 K / H 边界</label></div>
-        <div class="toggle-row"><input id="showBands" type="checkbox" checked /><label for="showBands">高亮 B 优势区间</label></div>
-      </div>
-
-      <div class="section">
+      <div class="section section--tight">
         <div class="section-title">操作</div>
         <div class="btn-row">
           <button id="resetBtn">恢复默认</button>
           <button id="demoBtn">套用示例参数</button>
         </div>
       </div>
+
+      <details class="sidebar-details" id="details-api">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">API 价格</span>
+            <span class="summary-brief" id="brief-api"></span>
+          </span>
+        </summary>
+        <div class="details-body">
+          <div class="field">
+            <div class="row"><label>普通输入价 <abbr title="每百万 token 首次非缓存输入">c_in</abbr></label><span class="value" id="v-cin"></span></div>
+            <p class="abbr-hint-touch">c_in：每百万 token 的首次非缓存输入价。</p>
+            <input id="c_in" type="range" min="1" max="50" step="0.5" value="12" />
+          </div>
+          <div class="field">
+            <div class="row"><label>缓存输入价 <abbr title="每百万 token 走缓存的输入单价">c_cache</abbr></label><span class="value" id="v-ccache"></span></div>
+            <p class="abbr-hint-touch">c_cache：每百万 token 的缓存读入单价。</p>
+            <input id="c_cache" type="range" min="0" max="20" step="0.5" value="1" />
+          </div>
+          <div class="field">
+            <div class="row"><label>输出价 <abbr title="每百万 token 的生成输出单价">c_out</abbr></label><span class="value" id="v-cout"></span></div>
+            <p class="abbr-hint-touch">c_out：每百万 token 的生成输出价。</p>
+            <input id="c_out" type="range" min="1" max="100" step="0.5" value="24" />
+          </div>
+        </div>
+      </details>
+
+      <details class="sidebar-details" id="details-summary">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">摘要与压缩</span>
+            <span class="summary-brief" id="brief-summary"></span>
+          </span>
+        </summary>
+        <div class="details-body">
+          <div class="field">
+            <div class="row"><label>模式</label><span class="value">压缩比 R / 直接 S</span></div>
+            <select id="summaryMode">
+              <option value="R">按压缩比 R</option>
+              <option value="S">按摘要长度 S</option>
+            </select>
+          </div>
+          <div class="field" id="R-field">
+            <div class="row"><label>压缩比 <abbr title="K×A 与摘要长 S 的换算比：S = K×A/R">R</abbr></label><span class="value" id="v-r"></span></div>
+            <p class="abbr-hint-touch">R：压缩比，与摘要长大致满足 S = K×A/R。</p>
+            <input id="R" type="range" min="1" max="50" step="0.5" value="10" />
+          </div>
+          <div class="field" id="S-field" style="display:none;">
+            <div class="row"><label>摘要长度 <abbr title="压缩后摘要的 token 数">S</abbr></label><span class="value" id="v-s"></span></div>
+            <p class="abbr-hint-touch">S：压缩后摘要的 token 数（直接设 S 时）。</p>
+            <input id="S" type="range" min="0" max="50000" step="100" value="4000" />
+          </div>
+        </div>
+      </details>
+
+      <details class="sidebar-details" id="details-display">
+        <summary>
+          <span class="summary-stack">
+            <span class="summary-label">图表与显示</span>
+            <span class="summary-brief" id="brief-display"></span>
+          </span>
+        </summary>
+        <div class="details-body">
+          <div class="toggle-row"><input id="showDiff" type="checkbox" checked /><label for="showDiff">显示差值曲线</label></div>
+          <div class="toggle-row"><input id="showMarkers" type="checkbox" checked /><label for="showMarkers">标记交点</label></div>
+          <div class="toggle-row"><input id="showBoundaries" type="checkbox" checked /><label for="showBoundaries">显示 K / H 边界</label></div>
+          <div class="toggle-row"><input id="showBands" type="checkbox" checked /><label for="showBands">高亮 B 优势区间</label></div>
+        </div>
+      </details>
     </div>
   </aside>
 
   <main class="panel chart-panel">
     <div class="chart-header">
       <div>
-        <h2 style="padding:0;border:0;margin:0;font-size:18px;">成本曲线与优势区间</h2>
-        <div class="meta">横轴为轮数 N，纵轴为累计成本（元）。绿色背景表示当前 B 策略比 A 更便宜；红色背景表示 A 更便宜。</div>
+        <h2>成本曲线与优势区间</h2>
+        <div class="meta">横轴为 N，纵轴为累计成本。浅色纵带标出 B 不高于 A 的轮次区间（仅当 B−A ≤ 0）。</div>
       </div>
       <div class="meta" id="currentSummary"></div>
     </div>
@@ -393,10 +594,10 @@
     </div>
 
     <div class="legend">
-      <span><i class="dot" style="background: var(--accent);"></i>策略 A：全缓存</span>
-      <span><i class="dot" style="background: var(--accent-2);"></i>策略 B：当前模式</span>
-      <span><i class="dot" style="background: var(--danger);"></i>差值 B - A</span>
-      <span><i class="dot" style="background: var(--warning);"></i>临界轮数</span>
+      <span><i class="dot" style="background: var(--chart-a);"></i>策略 A：全缓存</span>
+      <span><i class="dot" style="background: var(--chart-b);"></i>策略 B：当前模式</span>
+      <span><i class="dot" style="background: var(--chart-diff);"></i>差值 B - A</span>
+      <span><i class="dot" style="background: var(--chart-marker);"></i>临界轮数</span>
     </div>
 
     <div class="kpi-grid">
@@ -488,6 +689,17 @@
     vs: document.getElementById('v-s'),
     rField: document.getElementById('R-field'),
     sField: document.getElementById('S-field'),
+  };
+
+  const briefEls = {
+    api: document.getElementById('brief-api'),
+    summary: document.getElementById('brief-summary'),
+    display: document.getElementById('brief-display'),
+  };
+
+  const DEFAULTS = {
+    c_in: 12, c_cache: 1, c_out: 24,
+    summaryMode: 'R', R: 10, S: 4000,
   };
 
   const fmt = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 3 });
@@ -661,7 +873,7 @@
     const intervals = findIntervals(points, p.K);
 
     let html = '';
-    html += `<rect x="0" y="0" width="${W}" height="${H}" rx="18" fill="rgba(255,255,255,0.02)" />`;
+    html += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="#141415" />`;
 
     if (els.showBands.checked) {
       for (const seg of intervals) {
@@ -673,23 +885,23 @@
 
     for (const v of yTicks) {
       const yy = y(v);
-      html += `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 4" />`;
-      html += `<text x="${pad.l - 10}" y="${yy + 4}" fill="rgba(255,255,255,0.65)" font-size="12" text-anchor="end">${v >= 0 ? money.format(v) : '-' + money.format(Math.abs(v))}</text>`;
+      html += `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="rgba(161,161,170,0.2)" stroke-dasharray="4 4" />`;
+      html += `<text x="${pad.l - 10}" y="${yy + 4}" fill="rgba(161,161,170,0.9)" font-size="12" text-anchor="end">${v >= 0 ? money.format(v) : '-' + money.format(Math.abs(v))}</text>`;
     }
 
     for (const n of xTicks) {
       const xx = x(n);
-      html += `<line x1="${xx}" y1="${pad.t}" x2="${xx}" y2="${H - pad.b}" stroke="rgba(255,255,255,0.06)" />`;
-      html += `<text x="${xx}" y="${H - pad.b + 24}" fill="rgba(255,255,255,0.65)" font-size="12" text-anchor="middle">${n}</text>`;
+      html += `<line x1="${xx}" y1="${pad.t}" x2="${xx}" y2="${H - pad.b}" stroke="rgba(113,113,122,0.25)" />`;
+      html += `<text x="${xx}" y="${H - pad.b + 24}" fill="rgba(161,161,170,0.9)" font-size="12" text-anchor="middle">${n}</text>`;
     }
 
     if (els.showBoundaries.checked) {
       const kx = x(p.K);
       const hx = x(p.H);
-      html += `<line x1="${kx}" y1="${pad.t}" x2="${kx}" y2="${H - pad.b}" stroke="rgba(255,211,110,0.8)" stroke-dasharray="7 6" />`;
-      html += `<line x1="${hx}" y1="${pad.t}" x2="${hx}" y2="${H - pad.b}" stroke="rgba(255,255,255,0.35)" stroke-dasharray="7 6" />`;
-      html += `<text x="${kx + 6}" y="${pad.t + 16}" fill="rgba(255,211,110,0.95)" font-size="12">K=${p.K}</text>`;
-      html += `<text x="${hx + 6}" y="${pad.t + 34}" fill="rgba(255,255,255,0.75)" font-size="12">H=${p.H}</text>`;
+      html += `<line x1="${kx}" y1="${pad.t}" x2="${kx}" y2="${H - pad.b}" stroke="rgba(161,161,170,0.65)" stroke-dasharray="7 6" />`;
+      html += `<line x1="${hx}" y1="${pad.t}" x2="${hx}" y2="${H - pad.b}" stroke="rgba(113,113,122,0.45)" stroke-dasharray="7 6" />`;
+      html += `<text x="${kx + 6}" y="${pad.t + 16}" fill="rgba(196,196,204,0.95)" font-size="12">K=${p.K}</text>`;
+      html += `<text x="${hx + 6}" y="${pad.t + 34}" fill="rgba(161,161,170,0.85)" font-size="12">H=${p.H}</text>`;
     }
 
     if (els.showMarkers.checked) {
@@ -697,26 +909,26 @@
       if (cross) {
         const n = Math.max(1, Math.min(p.N_max, Math.round(+cross)));
         const d = points[n - 1];
-        html += `<circle cx="${x(n)}" cy="${y(d.a)}" r="6" fill="rgba(255,211,110,0.96)" stroke="white" stroke-width="1.2" />`;
-        html += `<text x="${x(n) + 10}" y="${y(d.a) - 10}" fill="rgba(255,211,110,0.96)" font-size="12">交点≈${cross}</text>`;
+        html += `<circle cx="${x(n)}" cy="${y(d.a)}" r="5" fill="var(--chart-marker)" stroke="#27272a" stroke-width="1" />`;
+        html += `<text x="${x(n) + 10}" y="${y(d.a) - 8}" fill="rgba(196,196,204,0.95)" font-size="12">交点≈${cross}</text>`;
       }
     }
 
-    html += `<path d="${pathA}" fill="none" stroke="#7aa2ff" stroke-width="3.5" />`;
-    html += `<path d="${pathB}" fill="none" stroke="#55d6be" stroke-width="3.5" />`;
+    html += `<path d="${pathA}" fill="none" stroke="var(--chart-a)" stroke-width="2" />`;
+    html += `<path d="${pathB}" fill="none" stroke="var(--chart-b)" stroke-width="2" />`;
     if (els.showDiff.checked) {
-      html += `<line x1="${pad.l}" y1="${y(0)}" x2="${W - pad.r}" y2="${y(0)}" stroke="rgba(255,211,110,0.45)" stroke-dasharray="5 5" />`;
-      html += `<path d="${pathD}" fill="none" stroke="#ff8a8a" stroke-width="2.8" stroke-dasharray="8 5" />`;
+      html += `<line x1="${pad.l}" y1="${y(0)}" x2="${W - pad.r}" y2="${y(0)}" stroke="rgba(113,113,122,0.5)" stroke-dasharray="5 5" />`;
+      html += `<path d="${pathD}" fill="none" stroke="var(--chart-diff)" stroke-width="1.5" stroke-dasharray="6 4" />`;
     }
 
     points.forEach((d) => {
       const xx = x(d.n);
-      html += `<circle data-n="${d.n}" data-a="${d.a}" data-b="${d.b}" data-d="${d.d}" cx="${xx}" cy="${y(d.a)}" r="5" fill="#7aa2ff" opacity="0" />`;
-      html += `<circle data-n="${d.n}" data-a="${d.a}" data-b="${d.b}" data-d="${d.d}" cx="${xx}" cy="${y(d.b)}" r="5" fill="#55d6be" opacity="0" />`;
+      html += `<circle data-n="${d.n}" data-a="${d.a}" data-b="${d.b}" data-d="${d.d}" cx="${xx}" cy="${y(d.a)}" r="5" fill="var(--chart-a)" opacity="0" />`;
+      html += `<circle data-n="${d.n}" data-a="${d.a}" data-b="${d.b}" data-d="${d.d}" cx="${xx}" cy="${y(d.b)}" r="5" fill="var(--chart-b)" opacity="0" />`;
     });
 
-    html += `<text x="${W / 2}" y="${H - 14}" fill="rgba(255,255,255,0.75)" font-size="13" text-anchor="middle">轮数 N</text>`;
-    html += `<text x="18" y="${H / 2}" fill="rgba(255,255,255,0.75)" font-size="13" text-anchor="middle" transform="rotate(-90 18 ${H / 2})">累计成本（元）</text>`;
+    html += `<text x="${W / 2}" y="${H - 14}" fill="rgba(161,161,170,0.9)" font-size="12" text-anchor="middle">轮数 N</text>`;
+    html += `<text x="18" y="${H / 2}" fill="rgba(161,161,170,0.9)" font-size="12" text-anchor="middle" transform="rotate(-90 18 ${H / 2})">累计成本（元）</text>`;
 
     svg.innerHTML = html;
 
@@ -775,6 +987,43 @@
 
   function setText(el, text) { el.textContent = text; }
 
+  function numEq(a, b) { return Math.abs(a - b) < 1e-6; }
+
+  function updateDetailBriefs() {
+    const ci = +els.c_in.value;
+    const cc = +els.c_cache.value;
+    const co = +els.c_out.value;
+    const apiDef = numEq(ci, DEFAULTS.c_in) && numEq(cc, DEFAULTS.c_cache) && numEq(co, DEFAULTS.c_out);
+    const apiState = apiDef ? '默认' : '已改';
+    briefEls.api.textContent = `${apiState} · 入 ${fmt.format(ci)} / 缓 ${fmt.format(cc)} / 出 ${fmt.format(co)} · 元/百万`;
+
+    const sm = els.summaryMode.value;
+    const rV = +els.R.value;
+    const sV = +els.S.value;
+    const sumDef = sm === DEFAULTS.summaryMode && numEq(rV, DEFAULTS.R) && numEq(sV, DEFAULTS.S);
+    const sumState = sumDef ? '默认' : '已改';
+    if (sm === 'R') {
+      const sApprox = (+els.K.value * +els.A.value) / rV;
+      briefEls.summary.textContent = `${sumState} · 按 R，R=${fmt.format(rV)}，S≈${fmt.format(sApprox)}（K×A/R）`;
+    } else {
+      briefEls.summary.textContent = `${sumState} · 按 S= ${fmt.format(sV)}`;
+    }
+
+    const off = [];
+    if (!els.showDiff.checked) off.push('差值');
+    if (!els.showMarkers.checked) off.push('交点');
+    if (!els.showBoundaries.checked) off.push('K/H 边界');
+    if (!els.showBands.checked) off.push('优势带');
+    const dispDef = off.length === 0;
+    briefEls.display.textContent = dispDef
+      ? '默认 · 差值/交点/边界/优势带 全开启'
+      : `已改 · 已关：${off.join('、')}`;
+
+    briefEls.api.title = briefEls.api.textContent;
+    briefEls.summary.title = briefEls.summary.textContent;
+    briefEls.display.title = briefEls.display.textContent;
+  }
+
   function render() {
     updateModeVisibility();
     const p = params();
@@ -797,6 +1046,7 @@
     setText(els.vh, fmt.format(p.H));
     setText(els.vr, fmt.format(p.R));
     setText(els.vs, fmt.format(p.S));
+    updateDetailBriefs();
 
     els.kpiS.textContent = fmt.format(currentS);
     els.kpiSHint.textContent = p.summaryMode === 'R'
@@ -886,6 +1136,17 @@
   });
   els.resetBtn.addEventListener('click', resetDefaults);
   els.demoBtn.addEventListener('click', applyDemo);
+
+  const glossaryDetails = document.getElementById('glossary-details');
+  if (glossaryDetails) {
+    const mqGlossaryOpen = window.matchMedia('(min-width: 960px)');
+    function syncGlossaryOpen() {
+      if (mqGlossaryOpen.matches) glossaryDetails.setAttribute('open', '');
+      else glossaryDetails.removeAttribute('open');
+    }
+    syncGlossaryOpen();
+    mqGlossaryOpen.addEventListener('change', syncGlossaryOpen);
+  }
 
   render();
 })();
