@@ -3,35 +3,55 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>对话成本策略比较器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0f0f10;
-      --bg-elev: #161618;
-      --panel: #161618;
-      --border: #2a2a2d;
-      --text: #e4e4e7;
-      --muted: #a1a1aa;
-      --faint: #71717a;
-      --accent: #c4c4cc;
-      --accent-2: #a8a29e;
-      --danger: #b87c7c;
-      --warning: #a8a29e;
-      --good: #8f9a8e;
-      --good-fill: rgba(100, 110, 95, 0.14);
-      --bad-fill: rgba(110, 80, 80, 0.1);
+      --font-sans: "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", Georgia, "Times New Roman", serif;
+      /* 暖色纸感深色：背景微褐，中性色带品而非纯灰 */
+      --bg: #12100e;
+      --bg-elev: #1a1815;
+      --panel: #1b1915;
+      --border: #342f28;
+      --text: #f3ebe1;
+      --muted: #b9aea1;
+      --faint: #8a7e70;
+      --accent: #d4a574;
+      --accent-2: #b8956a;
+      --danger: #c77b72;
+      --warning: #c9a34a;
+      --good: #8faa8a;
+      --good-fill: rgba(100, 130, 95, 0.16);
+      --bad-fill: rgba(150, 90, 85, 0.12);
       --radius: 8px;
-      --chart-a: #8b93a0;
-      --chart-b: #a89a8a;
-      --chart-diff: #9a7a7a;
-      --chart-marker: #a1a1aa;
+      --focus-ring: #6b5a48;
+      --chart-surface: #141210;
+      --chart-a: #8caabe;
+      --chart-b: #c9a86e;
+      --chart-diff: #b88b82;
+      --chart-marker: #e0bc7a;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.5;
       background: var(--bg);
+      background-image: radial-gradient(1000px 520px at 12% -8%, rgba(212, 165, 116, 0.07) 0%, transparent 52%);
       color: var(--text);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sidebar-details,
+      .sidebar-details > summary::after,
+      select,
+      button,
+      .tooltip {
+        transition: none;
+      }
     }
     .wrap {
       max-width: 1560px;
@@ -48,28 +68,35 @@
     }
     h1 {
       margin: 0;
-      font-size: clamp(22px, 2.2vw, 32px);
+      font-family: var(--font-serif);
+      font-size: clamp(24px, 2.4vw, 36px);
       font-weight: 600;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
     }
     .subtitle {
       color: var(--muted);
-      margin-top: 8px;
+      margin-top: 10px;
       font-size: 14px;
       max-width: 980px;
-      line-height: 1.55;
+      line-height: 1.65;
     }
     .pill {
-      color: var(--faint);
+      color: var(--accent-2);
       font-size: 12px;
       white-space: nowrap;
       font-variant-numeric: tabular-nums;
+      padding: 6px 10px;
+      border: 1px solid color-mix(in srgb, var(--border) 85%, var(--accent) 15%);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--bg-elev) 92%, rgba(212, 165, 116, 0.06) 8%);
     }
     .grid {
       display: grid;
       grid-template-columns: 380px minmax(0, 1fr);
       gap: 1px;
-      align-items: start;
+      /* stretch：避免左列较矮时，格线下方整段露出 .grid 的背板色（--border） */
+      align-items: stretch;
       background: var(--border);
     }
     .grid > .panel {
@@ -84,8 +111,10 @@
     .panel h2 {
       margin: 0;
       padding: 14px 16px 10px;
-      font-size: 15px;
+      font-family: var(--font-serif);
+      font-size: 16px;
       font-weight: 600;
+      letter-spacing: 0.03em;
       border-bottom: 1px solid var(--border);
     }
     .panel-body {
@@ -120,8 +149,8 @@
       transition: border-color 0.12s ease, background 0.12s ease;
     }
     .sidebar-details[open] {
-      border-left-color: rgba(161, 161, 170, 0.35);
-      background: linear-gradient(90deg, rgba(161, 161, 170, 0.05) 0, transparent 52%);
+      border-left-color: color-mix(in srgb, var(--accent) 50%, transparent);
+      background: linear-gradient(90deg, rgba(212, 165, 116, 0.08) 0, transparent 55%);
     }
     .sidebar-details > summary {
       list-style: none;
@@ -161,7 +190,7 @@
       text-overflow: ellipsis;
     }
     .sidebar-details[open] > summary .summary-label { color: var(--text); }
-    .sidebar-details[open] > summary .summary-brief { color: rgba(161, 161, 170, 0.95); }
+    .sidebar-details[open] > summary .summary-brief { color: color-mix(in srgb, var(--muted) 92%, var(--text) 8%); }
     .summary-brief-mobile { display: none; }
     .sidebar-details > summary::after {
       content: "";
@@ -192,9 +221,11 @@
       margin-top: 2px;
     }
     .section-title {
-      font-size: 12px;
-      color: var(--muted);
+      font-size: 11px;
+      color: var(--accent-2);
       font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
       margin-bottom: 8px;
     }
     .field { margin-bottom: 10px; }
@@ -221,7 +252,7 @@
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
-    input[type="range"] { width: 100%; accent-color: var(--faint); }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
     input[type="number"] {
       width: 100%;
       padding: 8px 10px;
@@ -233,7 +264,7 @@
     }
     /* 原生 select 需单独定制，否则在 Windows 上易残留系统外观 */
     select {
-      --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a7e70' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
       width: 100%;
       padding: 8px 36px 8px 10px;
       border-radius: 6px;
@@ -251,11 +282,11 @@
       transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
     }
     select:hover {
-      border-color: #3f3f46;
+      border-color: #4e463c;
     }
     select:focus-visible {
-      border-color: #52525b;
-      box-shadow: 0 0 0 1px #52525b;
+      border-color: var(--focus-ring);
+      box-shadow: 0 0 0 1px var(--focus-ring);
     }
     select option {
       background: var(--bg-elev);
@@ -287,8 +318,8 @@
       cursor: pointer;
       transition: background 0.12s ease, border-color 0.12s ease;
     }
-    button:hover { background: #1c1c1f; border-color: #3f3f46; }
-    button:focus-visible { outline: none; box-shadow: 0 0 0 1px #52525b; }
+    button:hover { background: #252118; border-color: #4a4238; }
+    button:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--focus-ring); }
     .chart-panel { padding: 0; }
     .chart-header {
       display: flex;
@@ -299,7 +330,7 @@
       padding: 14px 16px;
       border-bottom: 1px solid var(--border);
     }
-    .chart-header h2 { border: 0; padding: 0; margin: 0; font-size: 15px; font-weight: 600; }
+    .chart-header h2 { border: 0; padding: 0; margin: 0; font-family: var(--font-serif); font-size: 17px; font-weight: 600; letter-spacing: 0.03em; }
     .chart-header .meta {
       color: var(--muted);
       font-size: 12px;
@@ -314,7 +345,7 @@
       height: auto;
       display: block;
       border-radius: 4px;
-      background: #121214;
+      background: var(--chart-surface);
     }
     .legend {
       display: flex;
@@ -351,8 +382,9 @@
       padding: 14px 16px;
       border-top: 1px solid var(--border);
       color: var(--text);
-      line-height: 1.6;
-      font-size: 14px;
+      font-family: var(--font-serif);
+      line-height: 1.7;
+      font-size: 15px;
     }
     .analysis strong { color: var(--text); font-weight: 600; }
     .table-wrap {
@@ -371,7 +403,7 @@
       font-size: 13px;
       font-variant-numeric: tabular-nums;
     }
-    th { color: var(--text); font-weight: 600; background: #141415; }
+    th { color: var(--text); font-weight: 600; background: #1c1a16; }
     td { color: var(--text); }
     .good { color: var(--good); }
     .bad { color: var(--danger); }
@@ -385,7 +417,7 @@
     .tooltip {
       position: absolute;
       pointer-events: none;
-      background: #1c1c1f;
+      background: #201d18;
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 8px 10px;
@@ -412,7 +444,7 @@
     .chart-probe {
       padding: 10px 16px 8px;
       border-bottom: 1px solid var(--border);
-      background: rgba(20, 20, 22, 0.6);
+      background: color-mix(in srgb, var(--bg-elev) 86%, rgba(212, 165, 116, 0.05) 14%);
     }
     .chart-probe-row {
       display: flex;
@@ -450,8 +482,8 @@
       min-width: 0;
     }
     .chart-probe h3 { margin: 0; font-size: 13px; font-weight: 600; color: var(--text); }
-    input[type="number"]:focus-visible { outline: none; box-shadow: 0 0 0 2px #52525b; }
-    a:focus-visible, summary:focus-visible { outline: none; box-shadow: 0 0 0 2px #52525b; }
+    input[type="number"]:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
+    a:focus-visible, summary:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--focus-ring); }
     @media (max-width: 1120px) {
       .grid { grid-template-columns: 1fr; }
       .kpi-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1018,7 +1050,7 @@
 
     let html = '';
     html += '<desc id="chartSvgDesc"></desc>';
-    html += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="#141415" />`;
+    html += `<rect x="0" y="0" width="${W}" height="${H}" rx="4" fill="#141210" />`;
 
     if (els.showBands.checked) {
       for (const seg of intervals) {
@@ -1030,23 +1062,23 @@
 
     for (const v of yTicks) {
       const yy = y(v);
-      html += `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="rgba(161,161,170,0.2)" stroke-dasharray="4 4" />`;
-      html += `<text x="${pad.l - 10}" y="${yy + 4}" fill="rgba(161,161,170,0.9)" font-size="12" text-anchor="end">${v >= 0 ? money.format(v) : '-' + money.format(Math.abs(v))}</text>`;
+      html += `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="rgba(185,174,163,0.22)" stroke-dasharray="4 4" />`;
+      html += `<text x="${pad.l - 10}" y="${yy + 4}" fill="rgba(200,190,178,0.92)" font-size="12" text-anchor="end">${v >= 0 ? money.format(v) : '-' + money.format(Math.abs(v))}</text>`;
     }
 
     for (const n of xTicks) {
       const xx = x(n);
-      html += `<line x1="${xx}" y1="${pad.t}" x2="${xx}" y2="${H - pad.b}" stroke="rgba(113,113,122,0.25)" />`;
-      html += `<text x="${xx}" y="${H - pad.b + 24}" fill="rgba(161,161,170,0.9)" font-size="12" text-anchor="middle">${n}</text>`;
+      html += `<line x1="${xx}" y1="${pad.t}" x2="${xx}" y2="${H - pad.b}" stroke="rgba(138,126,112,0.28)" />`;
+      html += `<text x="${xx}" y="${H - pad.b + 24}" fill="rgba(200,190,178,0.9)" font-size="12" text-anchor="middle">${n}</text>`;
     }
 
     if (els.showBoundaries.checked) {
       const kx = x(p.K);
       const hx = x(p.H);
-      html += `<line x1="${kx}" y1="${pad.t}" x2="${kx}" y2="${H - pad.b}" stroke="rgba(161,161,170,0.65)" stroke-dasharray="7 6" />`;
-      html += `<line x1="${hx}" y1="${pad.t}" x2="${hx}" y2="${H - pad.b}" stroke="rgba(113,113,122,0.45)" stroke-dasharray="7 6" />`;
-      html += `<text x="${kx + 6}" y="${pad.t + 16}" fill="rgba(196,196,204,0.95)" font-size="12">K=${p.K}</text>`;
-      html += `<text x="${hx + 6}" y="${pad.t + 34}" fill="rgba(161,161,170,0.85)" font-size="12">H=${p.H}</text>`;
+      html += `<line x1="${kx}" y1="${pad.t}" x2="${kx}" y2="${H - pad.b}" stroke="rgba(212,165,116,0.55)" stroke-dasharray="7 6" />`;
+      html += `<line x1="${hx}" y1="${pad.t}" x2="${hx}" y2="${H - pad.b}" stroke="rgba(138,126,112,0.42)" stroke-dasharray="7 6" />`;
+      html += `<text x="${kx + 6}" y="${pad.t + 16}" fill="rgba(232,220,205,0.95)" font-size="12">K=${p.K}</text>`;
+      html += `<text x="${hx + 6}" y="${pad.t + 34}" fill="rgba(185,174,163,0.9)" font-size="12">H=${p.H}</text>`;
     }
 
     if (els.showMarkers.checked) {
@@ -1054,15 +1086,15 @@
       if (cross) {
         const n = Math.max(1, Math.min(p.N_max, Math.round(+cross)));
         const d = points[n - 1];
-        html += `<circle cx="${x(n)}" cy="${y(d.a)}" r="5" fill="var(--chart-marker)" stroke="#27272a" stroke-width="1" />`;
-        html += `<text x="${x(n) + 10}" y="${y(d.a) - 8}" fill="rgba(196,196,204,0.95)" font-size="12">交点≈${cross}</text>`;
+        html += `<circle cx="${x(n)}" cy="${y(d.a)}" r="5" fill="var(--chart-marker)" stroke="#3a342c" stroke-width="1" />`;
+        html += `<text x="${x(n) + 10}" y="${y(d.a) - 8}" fill="rgba(232,220,205,0.95)" font-size="12">交点≈${cross}</text>`;
       }
     }
 
     html += `<path d="${pathA}" fill="none" stroke="var(--chart-a)" stroke-width="2" />`;
     html += `<path d="${pathB}" fill="none" stroke="var(--chart-b)" stroke-width="2" />`;
     if (els.showDiff.checked) {
-      html += `<line x1="${pad.l}" y1="${y(0)}" x2="${W - pad.r}" y2="${y(0)}" stroke="rgba(113,113,122,0.5)" stroke-dasharray="5 5" />`;
+      html += `<line x1="${pad.l}" y1="${y(0)}" x2="${W - pad.r}" y2="${y(0)}" stroke="rgba(138,126,112,0.45)" stroke-dasharray="5 5" />`;
       html += `<path d="${pathD}" fill="none" stroke="var(--chart-diff)" stroke-width="1.5" stroke-dasharray="6 4" />`;
     }
 
@@ -1072,8 +1104,8 @@
       html += `<circle data-n="${d.n}" data-a="${d.a}" data-b="${d.b}" data-d="${d.d}" cx="${xx}" cy="${y(d.b)}" r="5" fill="var(--chart-b)" opacity="0" />`;
     });
 
-    html += `<text x="${W / 2}" y="${H - 14}" fill="rgba(161,161,170,0.9)" font-size="12" text-anchor="middle">轮数 N</text>`;
-    html += `<text x="18" y="${H / 2}" fill="rgba(161,161,170,0.9)" font-size="12" text-anchor="middle" transform="rotate(-90 18 ${H / 2})">累计成本（元）</text>`;
+    html += `<text x="${W / 2}" y="${H - 14}" fill="rgba(185,174,163,0.9)" font-size="12" text-anchor="middle">轮数 N</text>`;
+    html += `<text x="18" y="${H / 2}" fill="rgba(185,174,163,0.9)" font-size="12" text-anchor="middle" transform="rotate(-90 18 ${H / 2})">累计成本（元）</text>`;
 
     svg.innerHTML = html;
 
