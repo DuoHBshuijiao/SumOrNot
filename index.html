@@ -32,6 +32,13 @@
       --chart-b: #c9a86e;
       --chart-diff: #b88b82;
       --chart-marker: #e0bc7a;
+      /* 间距阶：主结构用 4/5/6，组件内用 2/3 */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
     }
     * { box-sizing: border-box; }
     html, body { height: 100%; }
@@ -56,15 +63,15 @@
     .wrap {
       max-width: 1560px;
       margin: 0 auto;
-      padding: 24px;
+      padding: clamp(var(--space-4), 2vw, var(--space-5));
     }
     header {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: var(--space-3);
       justify-content: space-between;
       align-items: end;
-      margin-bottom: 20px;
+      margin-bottom: var(--space-5);
     }
     h1 {
       margin: 0;
@@ -76,7 +83,7 @@
     }
     .subtitle {
       color: var(--muted);
-      margin-top: 10px;
+      margin-top: var(--space-2);
       font-size: 14px;
       max-width: 980px;
       line-height: 1.65;
@@ -110,7 +117,7 @@
     }
     .panel h2 {
       margin: 0;
-      padding: 14px 16px 10px;
+      padding: var(--space-3) var(--space-4) 10px;
       font-family: var(--font-serif);
       font-size: 16px;
       font-weight: 600;
@@ -119,8 +126,8 @@
     }
     .panel-body {
       --side-rhythm: 10px;
-      --side-sep: 12px;
-      padding: 12px 16px 16px;
+      --side-sep: var(--space-3);
+      padding: var(--space-3) var(--space-4) var(--space-4);
     }
     .param-glossary {
       font-size: 12px;
@@ -320,15 +327,21 @@
     }
     button:hover { background: #252118; border-color: #4a4238; }
     button:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--focus-ring); }
-    .chart-panel { padding: 0; }
+    .chart-panel {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
     .chart-header {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
-      align-items: center;
+      gap: var(--space-3);
+      align-items: flex-start;
       flex-wrap: wrap;
-      padding: 14px 16px;
+      padding: var(--space-3) var(--space-4);
       border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--bg-elev) 70%, var(--panel) 30%);
     }
     .chart-header h2 { border: 0; padding: 0; margin: 0; font-family: var(--font-serif); font-size: 17px; font-weight: 600; letter-spacing: 0.03em; }
     .chart-header .meta {
@@ -336,9 +349,18 @@
       font-size: 12px;
       line-height: 1.5;
     }
+    .dashboard-chart-block {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      border-bottom: 1px solid var(--border);
+    }
     .chart-wrap {
       position: relative;
-      padding: 12px 12px 6px;
+      padding: var(--space-3) var(--space-3) var(--space-2);
+      flex: 1;
+      min-height: 0;
     }
     svg {
       width: 100%;
@@ -350,8 +372,8 @@
     .legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px 14px;
-      padding: 0 16px 12px;
+      gap: var(--space-2) 14px;
+      padding: 0 var(--space-4) var(--space-3);
       color: var(--muted);
       font-size: 12px;
     }
@@ -366,21 +388,27 @@
     }
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      border-top: 1px solid var(--border);
-    }
-    .kpi {
-      padding: 12px 16px;
-      border-right: 1px solid var(--border);
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      border-bottom: 1px solid var(--border);
       background: var(--bg);
     }
+    .kpi {
+      padding: var(--space-3) var(--space-4);
+      border-right: 1px solid var(--border);
+      min-width: 0;
+    }
     .kpi:last-child { border-right: 0; }
-    .kpi .label { color: var(--faint); font-size: 11px; margin-bottom: 4px; font-weight: 500; }
-    .kpi .value { color: var(--text); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
-    .kpi .hint { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .kpi .label { color: var(--faint); font-size: 11px; margin-bottom: var(--space-1); font-weight: 500; }
+    .kpi .value { color: var(--text); font-size: clamp(16px, 1.1vw, 20px); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+    .kpi .hint { margin-top: var(--space-1); color: var(--muted); font-size: 11px; line-height: 1.45; }
+    .dashboard-detail {
+      margin-top: 0;
+      padding-top: var(--space-1);
+      background: color-mix(in srgb, var(--panel) 88%, var(--bg) 12%);
+    }
     .analysis {
-      padding: 14px 16px;
-      border-top: 1px solid var(--border);
+      padding: var(--space-4);
       color: var(--text);
       font-family: var(--font-serif);
       line-height: 1.7;
@@ -388,7 +416,7 @@
     }
     .analysis strong { color: var(--text); font-weight: 600; }
     .table-wrap {
-      padding: 0 16px 16px;
+      padding: 0 var(--space-4) var(--space-4);
       overflow: auto;
     }
     table {
@@ -409,7 +437,7 @@
     .bad { color: var(--danger); }
     .warn { color: var(--warning); }
     .footer-note {
-      padding: 0 16px 16px;
+      padding: 0 var(--space-4) var(--space-4);
       color: var(--faint);
       font-size: 11px;
       line-height: 1.55;
@@ -442,7 +470,7 @@
       border: 0;
     }
     .chart-probe {
-      padding: 10px 16px 8px;
+      padding: var(--space-3) var(--space-4) var(--space-2);
       border-bottom: 1px solid var(--border);
       background: color-mix(in srgb, var(--bg-elev) 86%, rgba(212, 165, 116, 0.05) 14%);
     }
@@ -674,7 +702,30 @@
       <div class="meta" id="currentSummary"></div>
     </div>
 
-    <p id="chartVisDesc" class="sr-only">折线图。横轴为轮数，纵轴为人民币累计成本。系列含义见图下图例。若仅使用键盘或读屏，请用下方探点区输入轮数 N 或使用上一条、下一条，勿依赖图上透明热点。</p>
+    <p id="chartVisDesc" class="sr-only">折线图。横轴为轮数，纵轴为人民币累计成本。系列含义见图例。若仅使用键盘或读屏，请用专区内「按轮次探点」输入轮数 N 或上一条、下一条，勿依赖图上透明热点。</p>
+
+    <div class="kpi-grid" aria-label="关键指标">
+      <div class="kpi">
+        <div class="label">当前摘要长度 S</div>
+        <div class="value" id="kpi-s"></div>
+        <div class="hint" id="kpi-s-hint"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">首个交点</div>
+        <div class="value" id="kpi-break"></div>
+        <div class="hint" id="kpi-break-hint"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">N = N_max 时优胜策略</div>
+        <div class="value" id="kpi-winner"></div>
+        <div class="hint" id="kpi-winner-hint"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">B 优势覆盖率</div>
+        <div class="value" id="kpi-ratio"></div>
+        <div class="hint" id="kpi-ratio-hint"></div>
+      </div>
+    </div>
 
     <div
       class="chart-probe"
@@ -705,49 +756,29 @@
       <div class="chart-probe-readout" id="chartProbeReadout" role="status" aria-live="polite" aria-atomic="true">加载中</div>
     </div>
 
-    <div class="chart-wrap">
-      <div class="tooltip" id="tooltip"></div>
-      <svg
-        id="chart"
-        viewBox="0 0 1160 600"
-        preserveAspectRatio="none"
-        role="img"
-        focusable="false"
-        aria-label="折线图，策略 A 与 B 的累计成本及差值"
-        aria-describedby="chartVisDesc chart-probe-legend"
-      ></svg>
-    </div>
+    <div class="dashboard-chart-block">
+      <div class="chart-wrap">
+        <div class="tooltip" id="tooltip"></div>
+        <svg
+          id="chart"
+          viewBox="0 0 1160 600"
+          preserveAspectRatio="none"
+          role="img"
+          focusable="false"
+          aria-label="折线图，策略 A 与 B 的累计成本及差值"
+          aria-describedby="chartVisDesc chart-probe-legend"
+        ></svg>
+      </div>
 
-    <div class="legend">
-      <span><i class="dot" style="background: var(--chart-a);"></i>策略 A：全缓存</span>
-      <span><i class="dot" style="background: var(--chart-b);"></i>策略 B：当前模式</span>
-      <span><i class="dot" style="background: var(--chart-diff);"></i>差值 B - A</span>
-      <span><i class="dot" style="background: var(--chart-marker);"></i>临界轮数</span>
-    </div>
-
-    <div class="kpi-grid">
-      <div class="kpi">
-        <div class="label">当前摘要长度 S</div>
-        <div class="value" id="kpi-s"></div>
-        <div class="hint" id="kpi-s-hint"></div>
-      </div>
-      <div class="kpi">
-        <div class="label">首个交点</div>
-        <div class="value" id="kpi-break"></div>
-        <div class="hint" id="kpi-break-hint"></div>
-      </div>
-      <div class="kpi">
-        <div class="label">N = N_max 时优胜策略</div>
-        <div class="value" id="kpi-winner"></div>
-        <div class="hint" id="kpi-winner-hint"></div>
-      </div>
-      <div class="kpi">
-        <div class="label">B 优势覆盖率</div>
-        <div class="value" id="kpi-ratio"></div>
-        <div class="hint" id="kpi-ratio-hint"></div>
+      <div class="legend">
+        <span><i class="dot" style="background: var(--chart-a);"></i>策略 A：全缓存</span>
+        <span><i class="dot" style="background: var(--chart-b);"></i>策略 B：当前模式</span>
+        <span><i class="dot" style="background: var(--chart-diff);"></i>差值 B - A</span>
+        <span><i class="dot" style="background: var(--chart-marker);"></i>临界轮数</span>
       </div>
     </div>
 
+    <div class="dashboard-detail">
     <div class="analysis" id="analysis"></div>
 
     <div class="table-wrap">
@@ -765,6 +796,7 @@
       </table>
     </div>
     <div class="footer-note">建模说明：A 使用连续前缀缓存；B 的“持续滚动窗口”在窗口满后按保守模型近似为每轮重排，命中缓存大幅减弱；“批量裁剪”则在非裁剪轮可享受前缀缓存，但在裁剪或总结更新轮会发生缓存重置。此页面目的是把这类阈值与区间直观画出来，便于调参比较。</div>
+    </div>
   </main>
 </div>
 
