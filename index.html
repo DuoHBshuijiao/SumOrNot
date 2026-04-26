@@ -454,6 +454,16 @@
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus-ring) 55%, transparent);
     }
     button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.btn--secondary {
+      background: transparent;
+      color: var(--muted);
+      border-color: color-mix(in srgb, var(--border) 80%, var(--faint) 20%);
+    }
+    button.btn--secondary:hover {
+      background: color-mix(in srgb, var(--surface-hover) 40%, transparent);
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
     .chart-panel {
       padding: 0;
       display: flex;
@@ -462,7 +472,7 @@
     }
     #chartVisDesc { order: 0; }
     .chart-header { order: 1; }
-    .kpi-grid { order: 2; }
+    .kpi-stack { order: 2; }
     #chart-probe-region { order: 3; }
     .dashboard-chart-block { order: 4; }
     .dashboard-detail { order: 5; }
@@ -515,13 +525,26 @@
       padding: var(--space-3) var(--space-3) var(--space-2);
       flex: 1;
       min-height: 0;
+      border-radius: 4px;
     }
-    svg {
+    .chart-wrap:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus-ring) 55%, transparent);
+    }
+    .chart-svg-host {
+      position: relative;
       width: 100%;
-      height: auto;
-      display: block;
+      aspect-ratio: 1160 / 600;
+      max-height: min(58vh, 640px);
       border-radius: 4px;
       background: var(--chart-surface);
+    }
+    .chart-svg-host svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 4px;
+      background: transparent;
     }
     .legend {
       display: flex;
@@ -542,19 +565,66 @@
       display: inline-block;
       box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 50%, var(--bg) 50%);
     }
+    .kpi-stack {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .kpi-headline {
+      margin: 0;
+      padding: var(--space-4) var(--space-4) var(--space-3);
+      font-family: var(--font-serif);
+      font-size: var(--text-base);
+      font-weight: 600;
+      line-height: var(--leading-relaxed);
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0;
-      border-bottom: 1px solid var(--border);
       background: var(--bg);
     }
+    .kpi-grid--extra {
+      border-top: 1px solid var(--border);
+    }
+    .kpi-more {
+      border-top: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .kpi-more > summary {
+      list-style: none;
+      cursor: pointer;
+      user-select: none;
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--muted);
+      transition: color 0.12s var(--ease-out), background 0.12s var(--ease-out);
+    }
+    .kpi-more > summary::-webkit-details-marker { display: none; }
+    .kpi-more > summary::after {
+      content: "";
+      display: inline-block;
+      width: 0; height: 0;
+      margin-left: 8px;
+      vertical-align: middle;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+      border-top: 5px solid var(--faint);
+      transition: transform 0.15s ease;
+    }
+    .kpi-more[open] > summary::after { transform: rotate(180deg); }
+    .kpi-more[open] > summary { color: var(--text); background: color-mix(in srgb, var(--bg-elev) 25%, var(--bg) 75%); }
+    .kpi-more > summary:hover { color: var(--text); }
     .kpi {
       padding: var(--space-4) var(--space-4) var(--space-3);
       border-right: 1px solid var(--border);
       min-width: 0;
     }
-    .kpi:last-child { border-right: 0; }
+    .kpi:nth-child(2n) { border-right: 0; }
     .kpi--lead {
       background: color-mix(in srgb, var(--bg-elev) 35%, var(--bg) 65%);
       box-shadow: inset 0 3px 0 color-mix(in srgb, var(--accent) 40%, transparent);
@@ -589,7 +659,7 @@
       -webkit-overflow-scrolling: touch;
       overscroll-behavior-x: contain;
     }
-    table {
+    table.interval-table {
       width: 100%;
       border-collapse: collapse;
       min-width: 700px;
@@ -723,7 +793,7 @@
     }
     .chart-probe-row button:disabled { opacity: 0.4; cursor: not-allowed; }
     .chart-probe-legend { font-size: var(--text-xs); color: var(--muted); margin: var(--space-2) 0 0; line-height: var(--leading-normal); overflow-wrap: anywhere; }
-    #chart {
+    .chart-svg-host svg#chart {
       min-width: 0;
     }
     .chart-probe h3 { margin: 0; font-size: var(--text-sm); font-weight: 600; color: var(--text); letter-spacing: 0.01em; line-height: var(--leading-tight); }
@@ -743,9 +813,6 @@
         grid-column: 1;
         grid-row: 2;
       }
-      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-      .kpi { border-right: 0; }
-      .kpi:nth-child(odd) { border-right: 1px solid var(--border); }
     }
     /* 窄屏：先主图、再探点（拇指滚动自然落在下方；桌面保持「先读数、后看图」） */
     @media (max-width: 820px) {
@@ -771,9 +838,49 @@
       .wrap { padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
       .kpi-grid { grid-template-columns: 1fr; }
       .kpi { border-right: 0; border-bottom: 1px solid var(--border); }
-      .kpi:nth-child(odd) { border-right: 0; }
+      .kpi:nth-child(2n) { border-right: 0; }
       .kpi:last-child { border-bottom: 0; }
       .legend { font-size: var(--text-2xs); line-height: var(--leading-normal); gap: var(--space-2); }
+      table.interval-table {
+        min-width: 0;
+      }
+      table.interval-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+      table.interval-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-2);
+        border-bottom: 1px solid var(--border);
+      }
+      table.interval-table tbody td {
+        display: block;
+        padding: 4px 0;
+        border-bottom: 0;
+      }
+      table.interval-table tbody td::before {
+        content: attr(data-label);
+        display: block;
+        font-size: var(--text-2xs);
+        color: var(--faint);
+        font-weight: 500;
+        margin-bottom: 2px;
+      }
+      table.interval-table tbody tr td:first-child {
+        grid-column: 1 / -1;
+      }
+      table.interval-table tbody td.interval-empty::before {
+        content: none;
+      }
     }
     /* 窄屏 / 触摸：不依赖悬停，缩写旁显示常驻短说明；略增大可点区域 */
     @media (max-width: 959px) {
@@ -835,29 +942,38 @@
       <div class="meta meta--params" id="currentSummary"></div>
     </div>
 
-    <p id="chartVisDesc" class="sr-only">两条折线为策略 A 与 B 的累计成本，另有差值曲线。读屏请用「按轮次查看」输入轮数或使用上一条、下一条，勿依赖图上不可见的悬停热点。</p>
+    <p id="chartVisDesc" class="sr-only">两条折线为策略 A 与 B 的累计成本，另有差值曲线。读屏请用「按轮次查看」输入轮数或使用上一条、下一条；将焦点移到图表区域时也可用左右方向键切换轮数。勿依赖图上不可见的悬停热点。</p>
 
-    <div class="kpi-grid" aria-label="关键指标">
-      <div class="kpi kpi--lead">
-        <div class="label">估算摘要长度（S）</div>
-        <div class="value" id="kpi-s"></div>
-        <div class="hint" id="kpi-s-hint"></div>
+    <div class="kpi-stack">
+      <div id="resultAnnouncer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+      <p class="kpi-headline" id="kpiHeadline"></p>
+      <div class="kpi-grid" aria-label="关键指标（打平与末尾）">
+        <div class="kpi kpi--lead">
+          <div class="label">成本大致打平的轮次</div>
+          <div class="value" id="kpi-break"></div>
+          <div class="hint" id="kpi-break-hint"></div>
+        </div>
+        <div class="kpi kpi--lead">
+          <div class="label">模拟末尾谁更省</div>
+          <div class="value" id="kpi-winner"></div>
+          <div class="hint" id="kpi-winner-hint"></div>
+        </div>
       </div>
-      <div class="kpi">
-        <div class="label">成本大致打平的轮次</div>
-        <div class="value" id="kpi-break"></div>
-        <div class="hint" id="kpi-break-hint"></div>
-      </div>
-      <div class="kpi">
-        <div class="label">模拟末尾谁更省</div>
-        <div class="value" id="kpi-winner"></div>
-        <div class="hint" id="kpi-winner-hint"></div>
-      </div>
-      <div class="kpi">
-        <div class="label">B 更省的轮次占比</div>
-        <div class="value" id="kpi-ratio"></div>
-        <div class="hint" id="kpi-ratio-hint"></div>
-      </div>
+      <details class="kpi-more" id="kpi-more-details">
+        <summary>更多读数：摘要长度 S、B 更省占比</summary>
+        <div class="kpi-grid kpi-grid--extra" aria-label="补充指标">
+          <div class="kpi">
+            <div class="label">估算摘要长度（S）</div>
+            <div class="value" id="kpi-s"></div>
+            <div class="hint" id="kpi-s-hint"></div>
+          </div>
+          <div class="kpi">
+            <div class="label">B 更省的轮次占比</div>
+            <div class="value" id="kpi-ratio"></div>
+            <div class="hint" id="kpi-ratio-hint"></div>
+          </div>
+        </div>
+      </details>
     </div>
 
     <div
@@ -868,7 +984,7 @@
       aria-describedby="chartVisDesc"
     >
       <h3 id="chart-probe-title">按轮次查看数字</h3>
-      <p class="chart-probe-hint" id="chart-probe-hint">触屏或键盘用户请用此处；有鼠标也可在图上悬停查看（读屏请勿依赖悬停）。</p>
+      <p class="chart-probe-hint" id="chart-probe-hint">触屏或键盘用户请用此处。先点击图表区域（出现焦点环）后，可用左右方向键切换轮数；也可在上方输入轮数。有鼠标可在图上悬停查看（读屏请勿依赖悬停）。</p>
       <div class="chart-probe-row">
         <label for="chartProbeN">轮数 <span aria-hidden="true">N</span><span class="sr-only"> N </span></label>
         <input
@@ -890,17 +1006,25 @@
     </div>
 
     <div class="dashboard-chart-block">
-      <div class="chart-wrap">
+      <div
+        class="chart-wrap"
+        id="chartWrap"
+        tabindex="0"
+        role="group"
+        aria-label="成本折线图。左右方向键可调整上方「按轮次查看」的轮数。"
+        aria-describedby="chartVisDesc chart-probe-legend"
+      >
         <div class="tooltip" id="tooltip"></div>
-        <svg
-          id="chart"
-          viewBox="0 0 1160 600"
-          preserveAspectRatio="none"
-          role="img"
-          focusable="false"
-          aria-label="折线图：策略 A 与策略 B 的累计成本及二者差值"
-          aria-describedby="chartVisDesc chart-probe-legend"
-        ></svg>
+        <div class="chart-svg-host">
+          <svg
+            id="chart"
+            viewBox="0 0 1160 600"
+            preserveAspectRatio="xMidYMid meet"
+            role="img"
+            focusable="false"
+            aria-hidden="true"
+          ></svg>
+        </div>
       </div>
 
       <div class="legend">
@@ -915,7 +1039,7 @@
       <div class="analysis" id="analysis"></div>
 
       <div class="table-wrap">
-        <table>
+        <table class="interval-table">
           <thead>
             <tr>
               <th>段</th>
@@ -1004,7 +1128,7 @@
       <div class="section section--tight">
         <div class="btn-row" role="group" aria-label="快捷操作">
           <button id="resetBtn" type="button">恢复默认参数</button>
-          <button id="demoBtn" type="button">加载示例（偏长窗口）</button>
+          <button id="demoBtn" type="button" class="btn--secondary">加载示例（偏长窗口）</button>
         </div>
       </div>
 
@@ -1130,6 +1254,9 @@
     chartProbePrev: document.getElementById('chartProbePrev'),
     chartProbeNext: document.getElementById('chartProbeNext'),
     chartProbeReadout: document.getElementById('chartProbeReadout'),
+    kpiHeadline: document.getElementById('kpiHeadline'),
+    resultAnnouncer: document.getElementById('resultAnnouncer'),
+    chartWrap: document.getElementById('chartWrap'),
   };
 
   const briefEls = {
@@ -1156,6 +1283,15 @@
 
   let lastPoints = null;
   let lastP = null;
+  let announceTimer = null;
+
+  function announceResultSummary(text) {
+    if (!els.resultAnnouncer) return;
+    clearTimeout(announceTimer);
+    announceTimer = setTimeout(() => {
+      els.resultAnnouncer.textContent = text;
+    }, 320);
+  }
 
   function formatProbeReadout(d) {
     if (!d) return '这一轮没有可用数据。';
@@ -1473,13 +1609,11 @@
       });
       c.addEventListener('mouseleave', () => { els.tooltip.style.opacity = '0'; });
     });
-
-    svg.addEventListener('mouseleave', () => { els.tooltip.style.opacity = '0'; });
   }
 
   function renderTable(intervals, points) {
     if (!intervals.length) {
-      els.intervalTable.innerHTML = `<tr><td colspan="5">在当前参数下，模拟范围内没有「B 累计不比 A 贵」的阶段。</td></tr>`;
+      els.intervalTable.innerHTML = `<tr><td colspan="5" class="interval-empty">在当前参数下，模拟范围内没有「B 累计不比 A 贵」的阶段。</td></tr>`;
       return;
     }
     els.intervalTable.innerHTML = intervals.map((seg, idx) => {
@@ -1488,11 +1622,11 @@
       const sign = start.d <= 0 && end.d <= 0 ? '策略 B 更省' : '接近打平';
       return `
         <tr>
-          <td>#${idx + 1}</td>
-          <td>${seg.start}</td>
-          <td>${seg.end}</td>
-          <td>${seg.len}</td>
-          <td class="good">${sign}</td>
+          <td data-label="段">#${idx + 1}</td>
+          <td data-label="从第几轮">${seg.start}</td>
+          <td data-label="到第几轮">${seg.end}</td>
+          <td data-label="持续轮数">${seg.len}</td>
+          <td data-label="哪边更省" class="good">${sign}</td>
         </tr>
       `;
     }).join('');
@@ -1568,8 +1702,13 @@
     } catch (err) {
       console.error(err);
       if (els.analysis) {
-        els.analysis.textContent = '';
-        els.analysis.appendChild(document.createTextNode('计算时出现问题。可点「恢复默认参数」或刷新页面。若打开开发者工具能看到报错，可一并反馈。'));
+        els.analysis.innerHTML =
+          '计算时出现问题，已暂停更新图表。请先点侧栏「恢复默认参数」或刷新页面重试。' +
+          '<details style="margin-top:12px;font-size:var(--text-xs);color:var(--muted);">' +
+          '<summary style="cursor:pointer;color:var(--faint);">技术详情（可选）</summary>' +
+          '<p style="margin:8px 0 0;word-break:break-all;">' +
+          (err && err.message ? String(err.message) : '未知错误') +
+          '</p></details>';
       }
     }
   }
@@ -1599,29 +1738,6 @@
     setText(els.vs, fmt.format(p.S));
     updateDetailBriefs();
 
-    els.kpiS.textContent = fmt.format(currentS);
-    els.kpiSHint.textContent = p.summaryMode === 'R'
-      ? `由 K×A÷R 估算：${fmt.format(p.K)}×${fmt.format(p.A)}÷${fmt.format(p.R)}`
-      : '当前为直接指定的 S';
-
-    els.kpiBreak.textContent = cross ? `约 ${cross} 轮` : '无';
-    els.kpiBreakHint.textContent = cross
-      ? '两条累计成本曲线由正变负（或反过来）的大致位置'
-      : '在当前模拟长度内，成本没有交叉';
-
-    const winnerAtN = points[p.N_max - 1];
-    els.kpiWinner.textContent = winnerAtN.a < winnerAtN.b ? '策略 A 更省' : (winnerAtN.a > winnerAtN.b ? '策略 B 更省' : '几乎一样');
-    els.kpiWinnerHint.textContent = `以第 ${fmt.format(p.N_max)} 轮时的累计成本比较（仍是估算）。`;
-
-    const ratio = postKCount > 0 ? (advantageCount / postKCount) * 100 : 0;
-    els.kpiRatio.textContent = postKCount > 0 ? `${ratio.toFixed(1)}%` : '—';
-    els.kpiRatioHint.textContent = postKCount > 0
-      ? `在「已过首轮摘要」的 ${postKCount} 轮里，B 更省的比例；更前面的轮次不计入`
-      : '尚未模拟到首轮摘要之后，此项不适用';
-
-    const summaryText = `B：${p.bMode === 'rolling' ? '滚动窗' : '批量裁'} · ${p.summaryMode === 'R' ? `R ${fmt.format(p.R)}` : `S ${fmt.format(p.S)}`} · K ${p.K} · H ${p.H}`;
-    els.currentSummary.textContent = summaryText;
-
     const firstGood = intervals[0];
     const lastGood = intervals[intervals.length - 1];
     let dominant = '多数轮次里策略 A 更省';
@@ -1631,12 +1747,46 @@
     else if (advantageCount > postKCount / 2) dominant = '首轮摘要之后，多数轮次 B 更省';
     else dominant = '首轮摘要之后，多数轮次 A 更省';
 
+    if (els.kpiHeadline) els.kpiHeadline.textContent = dominant;
+
+    els.kpiBreak.textContent = cross ? `约 ${cross} 轮` : '无';
+    els.kpiBreakHint.textContent = cross
+      ? '两条累计成本曲线由正变负（或反过来）的大致位置'
+      : '在当前模拟长度内，成本没有交叉';
+
+    const winnerAtN = points[p.N_max - 1];
+    const winnerLabel = winnerAtN.a < winnerAtN.b ? '策略 A 更省' : (winnerAtN.a > winnerAtN.b ? '策略 B 更省' : '几乎一样');
+    els.kpiWinner.textContent = winnerLabel;
+    els.kpiWinnerHint.textContent = `以第 ${fmt.format(p.N_max)} 轮时的累计成本比较（仍是估算）。`;
+
+    const ratio = postKCount > 0 ? (advantageCount / postKCount) * 100 : 0;
+    els.kpiS.textContent = fmt.format(currentS);
+    els.kpiSHint.textContent = p.summaryMode === 'R'
+      ? `由 K×A÷R 估算：${fmt.format(p.K)}×${fmt.format(p.A)}÷${fmt.format(p.R)}`
+      : '当前为直接指定的 S';
+
+    els.kpiRatio.textContent = postKCount > 0 ? `${ratio.toFixed(1)}%` : '—';
+    els.kpiRatioHint.textContent = postKCount > 0
+      ? `在「已过首轮摘要」的 ${postKCount} 轮里，B 更省的比例；更前面的轮次不计入`
+      : '尚未模拟到首轮摘要之后，此项不适用';
+
+    {
+      const crossSay = cross ? `打平约 ${cross} 轮` : '模拟内无打平';
+      const ratioSay = postKCount > 0 ? `，首轮摘要后 B 更省约占 ${ratio.toFixed(1)}%` : '';
+      announceResultSummary(
+        `${dominant}。${crossSay}。末尾累计：${winnerLabel}。摘要 S 约 ${fmt.format(currentS)}${ratioSay}。`
+      );
+    }
+
+    const summaryText = `B：${p.bMode === 'rolling' ? '滚动窗' : '批量裁'} · ${p.summaryMode === 'R' ? `R ${fmt.format(p.R)}` : `S ${fmt.format(p.S)}`} · K ${p.K} · H ${p.H}`;
+    els.currentSummary.textContent = summaryText;
+
     const ratioLine = postKCount > 0
       ? `过了首轮摘要后的 ${postKCount} 轮里，约有 <strong>${ratio.toFixed(1)}%</strong> 的轮次 B 更省。`
       : '当前模拟长度还没到首轮摘要之后，先不用看占比。';
 
     els.analysis.innerHTML = `
-      <strong>${dominant}</strong>。B 累计不高于 A 的阶段共 <strong>${intervals.length}</strong> 段。${ratioLine}<br>
+      B 累计不高于 A 的阶段共 <strong>${intervals.length}</strong> 段。${ratioLine}<br>
       离「打平」最近的是第 <strong>${fmt.format(minDiff.n)}</strong> 轮，差额约 <strong>${minDiff.d >= 0 ? '+' : ''}${money.format(minDiff.d)} 元</strong>。
       ${firstGood ? `第一段大致从第 <strong>${firstGood.start}</strong> 轮到 <strong>${firstGood.end}</strong> 轮` : '没有观察到 B 更省的阶段'}
       ${lastGood && intervals.length > 1 ? `；最后一段到第 <strong>${lastGood.end}</strong> 轮` : ''}。
@@ -1708,6 +1858,22 @@
   }
   els.resetBtn.addEventListener('click', resetDefaults);
   els.demoBtn.addEventListener('click', applyDemo);
+
+  if (els.chartWrap) {
+    els.chartWrap.addEventListener('mouseleave', () => {
+      if (els.tooltip) els.tooltip.style.opacity = '0';
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!els.chartWrap || document.activeElement !== els.chartWrap) return;
+    if (!lastP || !els.chartProbeN) return;
+    e.preventDefault();
+    const delta = e.key === 'ArrowLeft' ? -1 : 1;
+    setChartProbeN(getChartProbeNClamped() + delta);
+  });
 
   const glossaryDetails = document.getElementById('glossary-details');
   if (glossaryDetails) {
