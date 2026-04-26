@@ -72,6 +72,7 @@
       --table-th-bg: color-mix(in srgb, var(--bg-elev) 65%, var(--border) 35%);
       --tooltip-surface: color-mix(in srgb, var(--bg-elev) 92%, var(--border) 8%);
       --z-tooltip: 5;
+      --z-busy: 4;
       /* 字阶（rem，根 16px）：层级拉开，避免 14/15/16 糊成一团 */
       --text-2xs: 0.6875rem;
       --text-xs: 0.75rem;
@@ -106,10 +107,14 @@
       .sidebar-details > summary::after,
       .modeling-details,
       .modeling-details > summary::after,
+      .chart-probe-help > summary::after,
+      .kpi-more > summary,
+      .kpi-more > summary::after,
       select,
       button,
       input[type="number"],
-      .tooltip {
+      .tooltip,
+      .chart-busy-line {
         transition: none;
       }
     }
@@ -209,6 +214,12 @@
       letter-spacing: 0.03em;
       line-height: var(--leading-tight);
       border-bottom: 1px solid var(--border);
+    }
+    aside.panel > h2 {
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: color-mix(in srgb, var(--muted) 72%, var(--text) 28%);
+      letter-spacing: 0.04em;
     }
     .panel-body {
       --side-rhythm: 10px;
@@ -464,11 +475,81 @@
       color: var(--text);
       border-color: var(--border-hover);
     }
+    button.btn--primary {
+      background: color-mix(in srgb, var(--surface-hover) 55%, var(--bg) 45%);
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border) 65%);
+      color: var(--text);
+      font-weight: 600;
+    }
+    button.btn--primary:hover {
+      background: color-mix(in srgb, var(--surface-hover) 75%, var(--bg) 25%);
+      border-color: color-mix(in srgb, var(--accent) 48%, var(--border) 52%);
+    }
+    button.btn--demo {
+      background: transparent;
+      color: var(--faint);
+      border-style: dashed;
+      border-color: color-mix(in srgb, var(--border) 70%, var(--faint) 30%);
+      font-weight: 500;
+    }
+    button.btn--demo:hover {
+      color: var(--muted);
+      border-color: var(--border-hover);
+      border-style: dashed;
+      background: color-mix(in srgb, var(--surface-hover) 28%, transparent);
+    }
+    .btn-row--tools {
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .copy-toast {
+      flex: 1 1 100%;
+      margin: 0;
+      min-height: 1.25rem;
+      font-size: var(--text-2xs);
+      color: var(--good);
+      line-height: var(--leading-normal);
+    }
+    .copy-toast:empty {
+      display: none;
+    }
     .chart-panel {
       padding: 0;
       display: flex;
       flex-direction: column;
       min-height: 0;
+      position: relative;
+    }
+    .chart-panel.chart-busy-visual .chart-busy-line {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+    .chart-busy-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        color-mix(in srgb, var(--accent) 75%, transparent),
+        transparent
+      );
+      transform-origin: left;
+      transform: scaleX(0.15);
+      opacity: 0;
+      transition: opacity 0.2s var(--ease-out), transform 0.35s var(--ease-out);
+      pointer-events: none;
+      z-index: var(--z-busy);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .chart-busy-line {
+        transition: none;
+      }
+      .chart-panel.chart-busy-visual .chart-busy-line {
+        transform: scaleX(1);
+      }
     }
     #chartVisDesc { order: 0; }
     .chart-header { order: 1; }
@@ -487,7 +568,25 @@
       background: color-mix(in srgb, var(--bg-elev) 70%, var(--panel) 30%);
     }
     .chart-header-lead { flex: 1 1 280px; min-width: 0; }
-    .chart-header h2 { border: 0; padding: 0; margin: 0; font-family: var(--font-serif); font-size: clamp(1.0625rem, 1.35vw, 1.25rem); font-weight: 600; letter-spacing: 0.03em; line-height: var(--leading-tight); }
+    .chart-header h2 { border: 0; padding: 0; margin: 0; font-family: var(--font-serif); font-size: clamp(1.125rem, 1.5vw, 1.375rem); font-weight: 600; letter-spacing: 0.03em; line-height: var(--leading-tight); color: color-mix(in srgb, var(--text) 96%, var(--accent) 4%); }
+    .assumption-ledge {
+      margin: var(--space-3) 0 0;
+      padding: 0;
+      font-size: var(--text-xs);
+      line-height: var(--leading-normal);
+      color: var(--faint);
+      max-width: min(52ch, 100%);
+    }
+    .assumption-ledge a {
+      color: color-mix(in srgb, var(--accent-2) 82%, var(--text) 18%);
+      text-decoration: underline;
+      text-decoration-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
+      text-underline-offset: 0.2em;
+    }
+    .assumption-ledge a:hover {
+      color: var(--accent);
+      text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
+    }
     .chart-dek {
       margin: var(--space-2) 0 0;
       padding: 0;
@@ -571,15 +670,17 @@
     }
     .kpi-headline {
       margin: 0;
-      padding: var(--space-4) var(--space-4) var(--space-3);
+      padding: var(--space-5) var(--space-4) var(--space-4);
       font-family: var(--font-serif);
-      font-size: var(--text-base);
+      font-size: clamp(1.0625rem, 1.25vw, 1.1875rem);
       font-weight: 600;
       line-height: var(--leading-relaxed);
       color: var(--text);
       border-bottom: 1px solid var(--border);
       overflow-wrap: anywhere;
       word-break: break-word;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elev) 55%, var(--bg) 45%) 0%, var(--bg) 100%);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
     }
     .kpi-grid {
       display: grid;
@@ -614,7 +715,7 @@
       border-left: 4px solid transparent;
       border-right: 4px solid transparent;
       border-top: 5px solid var(--faint);
-      transition: transform 0.15s ease;
+      transition: transform 0.15s var(--ease-out);
     }
     .kpi-more[open] > summary::after { transform: rotate(180deg); }
     .kpi-more[open] > summary { color: var(--text); background: color-mix(in srgb, var(--bg-elev) 25%, var(--bg) 75%); }
@@ -653,6 +754,20 @@
       word-break: break-word;
     }
     .analysis strong { color: var(--text); font-weight: 600; }
+    .analysis-error-details {
+      margin-top: var(--space-3);
+      font-size: var(--text-xs);
+      color: var(--muted);
+    }
+    .analysis-error-details summary {
+      cursor: pointer;
+      color: var(--faint);
+      user-select: none;
+    }
+    .analysis-error-details p {
+      margin: var(--space-2) 0 0;
+      word-break: break-all;
+    }
     .table-wrap {
       padding: var(--space-3) var(--space-4) var(--space-5);
       overflow: auto;
@@ -770,6 +885,43 @@
       min-height: 40px;
       font-variant-numeric: tabular-nums;
     }
+    .chart-probe-lead {
+      font-size: var(--text-sm);
+      line-height: var(--leading-snug);
+      color: color-mix(in srgb, var(--muted) 55%, var(--text) 45%);
+      margin: 0 0 var(--space-2) 0;
+      max-width: min(64ch, 100%);
+      font-weight: 500;
+      overflow-wrap: anywhere;
+    }
+    .chart-probe-help {
+      margin: 0 0 var(--space-3) 0;
+      font-size: var(--text-xs);
+      line-height: var(--leading-normal);
+      color: var(--faint);
+    }
+    .chart-probe-help > summary {
+      cursor: pointer;
+      user-select: none;
+      color: var(--muted);
+      list-style: none;
+      width: fit-content;
+    }
+    .chart-probe-help > summary::-webkit-details-marker { display: none; }
+    .chart-probe-help > summary::after {
+      content: " · 展开";
+      font-weight: 500;
+      color: var(--faint);
+    }
+    .chart-probe-help[open] > summary::after {
+      content: " · 收起";
+    }
+    .chart-probe-help .chart-probe-help-body {
+      margin: var(--space-2) 0 0;
+      padding: 0;
+      max-width: min(72ch, 100%);
+      overflow-wrap: anywhere;
+    }
     .chart-probe-hint, .chart-probe-sr {
       font-size: var(--text-xs);
       line-height: var(--leading-normal);
@@ -833,6 +985,12 @@
       }
       .chart-probe { padding-bottom: max(var(--space-3), env(safe-area-inset-bottom)); }
       .modeling-details > summary { min-height: 44px; display: flex; align-items: center; padding: var(--space-2) 0; }
+      .chart-probe-help > summary {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        touch-action: manipulation;
+      }
     }
     @media (max-width: 640px) {
       .wrap { padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
@@ -933,16 +1091,18 @@
       </div>
       <div class="pill">离线单页 · 保存即可用</div>
     </header><div class="grid">
-  <main class="panel chart-panel">
+  <main class="panel chart-panel" id="main-chart-panel" aria-busy="false">
+    <div class="chart-busy-line" aria-hidden="true"></div>
     <div class="chart-header">
       <div class="chart-header-lead">
         <h2>趋势与结论</h2>
         <p class="chart-dek">横轴为对话轮数 N，纵轴为累计花费（元）。绿色条带表示在本模型下 B 的总成本不高于 A 的轮次范围。</p>
+        <p class="assumption-ledge">这是<strong>简化估算</strong>，用于心里有数；与真实账单可能因细则而异。建模边界见「<a href="#modeling-assumptions">模型在算什么</a>」。</p>
       </div>
       <div class="meta meta--params" id="currentSummary"></div>
     </div>
 
-    <p id="chartVisDesc" class="sr-only">两条折线为策略 A 与 B 的累计成本，另有差值曲线。读屏请用「按轮次查看」输入轮数或使用上一条、下一条；将焦点移到图表区域时也可用左右方向键切换轮数。勿依赖图上不可见的悬停热点。</p>
+    <p id="chartVisDesc" class="sr-only">两条折线为策略 A 与 B 的累计成本，另有差值曲线。读屏：参数变化与探点读数统一在页面内的状态播报区朗读。可用「按轮次查看」输入轮数或上一/下一轮；焦点在图表区域、或在探点区（轮数输入框除外）时，可用左右方向键切换轮数。勿依赖图上不可见的悬停热点。更完整的键盘与读屏说明在探点区可展开的「键盘与读屏说明」里。</p>
 
     <div class="kpi-stack">
       <div id="resultAnnouncer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
@@ -984,7 +1144,13 @@
       aria-describedby="chartVisDesc"
     >
       <h3 id="chart-probe-title">按轮次查看数字</h3>
-      <p class="chart-probe-hint" id="chart-probe-hint">触屏或键盘用户请用此处。先点击图表区域（出现焦点环）后，可用左右方向键切换轮数；也可在上方输入轮数。有鼠标可在图上悬停查看（读屏请勿依赖悬停）。</p>
+      <p class="chart-probe-lead" id="chart-probe-lead">输入轮次即可看该轮累计成本；图表区或「上一/下一轮」聚焦时，可用键盘左右键切换。</p>
+      <details class="chart-probe-help">
+        <summary id="chart-probe-help-summary">键盘与读屏说明</summary>
+        <div class="chart-probe-help-body">
+          轮数输入框内：左右键移动光标。焦点在「上一/下一轮」按钮、或图表区域（可见焦点环）时：左右键切换轮次。鼠标可悬停曲线读数。读屏请听页面顶部状态播报区；勿依赖图上不可见的悬停热点。
+        </div>
+      </details>
       <div class="chart-probe-row">
         <label for="chartProbeN">轮数 <span aria-hidden="true">N</span><span class="sr-only"> N </span></label>
         <input
@@ -996,13 +1162,13 @@
           step="1"
           value="1"
           inputmode="numeric"
-          aria-describedby="chart-probe-hint"
+          aria-describedby="chart-probe-lead"
         />
         <button type="button" id="chartProbePrev">上一轮</button>
         <button type="button" id="chartProbeNext">下一轮</button>
       </div>
       <p class="chart-probe-legend" id="chart-probe-legend">轮数不超过侧栏中的「最大模拟轮数」。</p>
-      <div class="chart-probe-readout" id="chartProbeReadout" role="status" aria-live="polite" aria-atomic="true">正在计算…</div>
+      <div class="chart-probe-readout" id="chartProbeReadout" aria-live="off">正在计算…</div>
     </div>
 
     <div class="dashboard-chart-block">
@@ -1011,7 +1177,7 @@
         id="chartWrap"
         tabindex="0"
         role="group"
-        aria-label="成本折线图。左右方向键可调整上方「按轮次查看」的轮数。"
+        aria-label="成本折线图。焦点在此或探点按钮上时，左右方向键可切换按轮次查看的轮数。"
         aria-describedby="chartVisDesc chart-probe-legend"
       >
         <div class="tooltip" id="tooltip"></div>
@@ -1052,7 +1218,7 @@
           <tbody id="intervalTable"></tbody>
         </table>
       </div>
-      <details class="modeling-details">
+      <details class="modeling-details" id="modeling-assumptions">
         <summary>模型在算什么（点开）</summary>
         <p class="modeling-body">策略 A 按「前缀一直能走缓存读」的理想情况估算。策略 B 在窗口变满后用偏保守的近似（缓存优势会弱一些）。批量裁剪模式下，非裁剪轮仍可走前缀缓存，裁剪或总结轮会重置。结果用于看趋势和数量级，请对照真实计费规则。</p>
       </details>
@@ -1126,10 +1292,12 @@
       </details>
 
       <div class="section section--tight">
-        <div class="btn-row" role="group" aria-label="快捷操作">
-          <button id="resetBtn" type="button">恢复默认参数</button>
-          <button id="demoBtn" type="button" class="btn--secondary">加载示例（偏长窗口）</button>
+        <div class="btn-row btn-row--tools" role="group" aria-label="快捷操作">
+          <button id="resetBtn" type="button" class="btn--primary">恢复默认参数</button>
+          <button id="demoBtn" type="button" class="btn--demo">加载示例（偏长窗口）</button>
+          <button id="copyLinkBtn" type="button" class="btn--secondary">复制可分享链接</button>
         </div>
+        <p id="copyToast" class="copy-toast" role="status" aria-live="polite" aria-atomic="true"></p>
       </div>
 
       <details class="sidebar-details" id="details-api">
@@ -1257,6 +1425,10 @@
     kpiHeadline: document.getElementById('kpiHeadline'),
     resultAnnouncer: document.getElementById('resultAnnouncer'),
     chartWrap: document.getElementById('chartWrap'),
+    chartProbeRegion: document.getElementById('chart-probe-region'),
+    mainChartPanel: document.getElementById('main-chart-panel'),
+    copyLinkBtn: document.getElementById('copyLinkBtn'),
+    copyToast: document.getElementById('copyToast'),
   };
 
   const briefEls = {
@@ -1272,6 +1444,125 @@
     K: 20, H: 30,
   };
 
+  let syncingFromUrl = false;
+  let urlSyncTimer = null;
+  let chartBusyTimer = null;
+
+  function readParamsFromLocation() {
+    let any = false;
+    try {
+      const u = new URL(window.location.href);
+      const q = u.searchParams;
+      if (![...q.keys()].length) return false;
+      syncingFromUrl = true;
+
+      const bm = q.get('bMode');
+      if (bm === 'rolling' || bm === 'batch') {
+        els.bMode.value = bm;
+        any = true;
+      }
+
+      function applySlider(id, key, defNum) {
+        if (!q.has(key)) return;
+        const el = els[id];
+        if (!el) return;
+        const raw = Number(q.get(key));
+        if (!Number.isFinite(raw)) return;
+        const lo = +el.min;
+        const hi = +el.max;
+        el.value = String(clampNum(raw, lo, hi, defNum));
+        any = true;
+      }
+
+      applySlider('c_in', 'c_in', DEFAULTS.c_in);
+      applySlider('c_cache', 'c_cache', DEFAULTS.c_cache);
+      applySlider('c_out', 'c_out', DEFAULTS.c_out);
+      applySlider('P', 'P', 10000);
+      applySlider('A', 'A', 2000);
+      applySlider('N_max', 'N_max', 1200);
+      applySlider('K', 'K', DEFAULTS.K);
+      applySlider('H', 'H', DEFAULTS.H);
+      applySlider('R', 'R', DEFAULTS.R);
+      applySlider('S', 'S', DEFAULTS.S);
+
+      const sm = q.get('summaryMode');
+      if (sm === 'R' || sm === 'S') {
+        els.summaryMode.value = sm;
+        any = true;
+      }
+
+      function applyToggle(key, el) {
+        if (!q.has(key)) return;
+        const v = q.get(key);
+        el.checked = !(v === '0' || v === 'false');
+        any = true;
+      }
+
+      applyToggle('showDiff', els.showDiff);
+      applyToggle('showMarkers', els.showMarkers);
+      applyToggle('showBoundaries', els.showBoundaries);
+      applyToggle('showBands', els.showBands);
+
+      if (q.has('probeN') && els.chartProbeN) {
+        const pn = Math.round(Number(q.get('probeN')));
+        if (Number.isFinite(pn) && pn >= 1) {
+          const max = Math.round(clampNum(els.N_max.value, 20, 3000, 1200));
+          els.chartProbeN.value = String(Math.max(1, Math.min(max, pn)));
+          any = true;
+        }
+      }
+    } catch (e) {
+      console.warn(e);
+    } finally {
+      syncingFromUrl = false;
+    }
+    return any;
+  }
+
+  function buildShareURL() {
+    const p = params();
+    const q = new URLSearchParams();
+    q.set('bMode', p.bMode);
+    q.set('c_in', String(p.c_in));
+    q.set('c_cache', String(p.c_cache));
+    q.set('c_out', String(p.c_out));
+    q.set('P', String(p.P));
+    q.set('A', String(p.A));
+    q.set('N_max', String(p.N_max));
+    q.set('K', String(p.K));
+    q.set('H', String(p.H));
+    q.set('summaryMode', p.mode);
+    q.set('R', String(p.R));
+    q.set('S', String(p.S));
+    q.set('showDiff', els.showDiff.checked ? '1' : '0');
+    q.set('showMarkers', els.showMarkers.checked ? '1' : '0');
+    q.set('showBoundaries', els.showBoundaries.checked ? '1' : '0');
+    q.set('showBands', els.showBands.checked ? '1' : '0');
+    const nProbe = getChartProbeNClamped();
+    if (lastP && Number.isFinite(nProbe)) q.set('probeN', String(nProbe));
+    const u = new URL(window.location.href);
+    u.search = q.toString();
+    return u.toString();
+  }
+
+  function syncUrlFromInputs() {
+    if (syncingFromUrl) return;
+    try {
+      history.replaceState(null, '', buildShareURL());
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+
+  function queueUrlSync() {
+    if (syncingFromUrl) return;
+    clearTimeout(urlSyncTimer);
+    urlSyncTimer = setTimeout(() => {
+      urlSyncTimer = null;
+      syncUrlFromInputs();
+    }, 320);
+  }
+
   function clampNum(v, lo, hi, fallback) {
     const n = typeof v === 'number' ? v : Number(v);
     if (!Number.isFinite(n)) return fallback;
@@ -1283,14 +1574,29 @@
 
   let lastPoints = null;
   let lastP = null;
-  let announceTimer = null;
+  let paramAnnTimer = null;
+  let probeAnnTimer = null;
 
-  function announceResultSummary(text) {
+  /** 参数/整图重算后的单次播报（与探点播报互斥，避免双通道抢话） */
+  function announceParamSr(text) {
     if (!els.resultAnnouncer) return;
-    clearTimeout(announceTimer);
-    announceTimer = setTimeout(() => {
+    clearTimeout(paramAnnTimer);
+    clearTimeout(probeAnnTimer);
+    paramAnnTimer = setTimeout(() => {
       els.resultAnnouncer.textContent = text;
-    }, 320);
+      paramAnnTimer = null;
+    }, 400);
+  }
+
+  /** 仅探点轮次变化时播报（会取消尚未播出的参数播报） */
+  function announceProbeSr(text) {
+    if (!els.resultAnnouncer) return;
+    clearTimeout(probeAnnTimer);
+    clearTimeout(paramAnnTimer);
+    probeAnnTimer = setTimeout(() => {
+      els.resultAnnouncer.textContent = text;
+      probeAnnTimer = null;
+    }, 90);
   }
 
   function formatProbeReadout(d) {
@@ -1317,31 +1623,39 @@
     const v = Math.max(1, Math.min(max, n));
     els.chartProbeN.value = String(v);
     updateChartProbe();
+    queueUrlSync();
   }
 
-  function updateChartProbe() {
+  function updateChartProbe(opts) {
+    const silentSr = opts && opts.silentSr;
     if (!els.chartProbeN || !els.chartProbeReadout || !lastPoints || !lastP) return;
     const max = lastP.N_max;
     if (max < 1) {
-      els.chartProbeReadout.textContent = '请先在侧栏把「最多模拟轮数」调到至少 1。';
+      const line = '请先在侧栏把「最多模拟轮数」调到至少 1。';
+      els.chartProbeReadout.textContent = line;
       if (els.chartProbePrev) els.chartProbePrev.disabled = true;
       if (els.chartProbeNext) els.chartProbeNext.disabled = true;
+      if (!silentSr) announceProbeSr(line);
       return;
     }
     els.chartProbeN.min = 1;
     els.chartProbeN.max = max;
     const n = getChartProbeNClamped();
     if (!Number.isFinite(n)) {
-      els.chartProbeReadout.textContent = '请输入 1 到「最多模拟轮数」之间的整数。';
+      const line = '请输入 1 到「最多模拟轮数」之间的整数。';
+      els.chartProbeReadout.textContent = line;
       if (els.chartProbePrev) els.chartProbePrev.disabled = true;
       if (els.chartProbeNext) els.chartProbeNext.disabled = true;
+      if (!silentSr) announceProbeSr(line);
       return;
     }
     els.chartProbeN.value = String(n);
     const pt = lastPoints[n - 1];
-    els.chartProbeReadout.textContent = pt ? formatProbeReadout(pt) : '这一轮没有可用数据。';
+    const line = pt ? formatProbeReadout(pt) : '这一轮没有可用数据。';
+    els.chartProbeReadout.textContent = line;
     if (els.chartProbePrev) els.chartProbePrev.disabled = n <= 1;
     if (els.chartProbeNext) els.chartProbeNext.disabled = n >= max;
+    if (!silentSr) announceProbeSr(line);
   }
 
   function params() {
@@ -1697,18 +2011,32 @@
   }
 
   function render() {
+    const panel = els.mainChartPanel;
+    if (panel) {
+      panel.setAttribute('aria-busy', 'true');
+      chartBusyTimer = setTimeout(() => {
+        if (panel.getAttribute('aria-busy') === 'true') panel.classList.add('chart-busy-visual');
+      }, 90);
+    }
     try {
       renderBody();
     } catch (err) {
       console.error(err);
       if (els.analysis) {
+        const raw = err && err.message ? String(err.message) : '未知错误';
+        const safe = raw.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         els.analysis.innerHTML =
-          '计算时出现问题，已暂停更新图表。请先点侧栏「恢复默认参数」或刷新页面重试。' +
-          '<details style="margin-top:12px;font-size:var(--text-xs);color:var(--muted);">' +
-          '<summary style="cursor:pointer;color:var(--faint);">技术详情（可选）</summary>' +
-          '<p style="margin:8px 0 0;word-break:break-all;">' +
-          (err && err.message ? String(err.message) : '未知错误') +
-          '</p></details>';
+          '<p>计算时出现问题，已暂停更新图表。可先点侧栏「恢复默认参数」或刷新页面重试。</p>' +
+          '<details class="analysis-error-details">' +
+          '<summary>详细信息（排障时可点开）</summary>' +
+          '<p>' + safe + '</p></details>';
+      }
+    } finally {
+      clearTimeout(chartBusyTimer);
+      chartBusyTimer = null;
+      if (panel) {
+        panel.setAttribute('aria-busy', 'false');
+        panel.classList.remove('chart-busy-visual');
       }
     }
   }
@@ -1770,14 +2098,6 @@
       ? `在「已过首轮摘要」的 ${postKCount} 轮里，B 更省的比例；更前面的轮次不计入`
       : '尚未模拟到首轮摘要之后，此项不适用';
 
-    {
-      const crossSay = cross ? `打平约 ${cross} 轮` : '模拟内无打平';
-      const ratioSay = postKCount > 0 ? `，首轮摘要后 B 更省约占 ${ratio.toFixed(1)}%` : '';
-      announceResultSummary(
-        `${dominant}。${crossSay}。末尾累计：${winnerLabel}。摘要 S 约 ${fmt.format(currentS)}${ratioSay}。`
-      );
-    }
-
     const summaryText = `B：${p.bMode === 'rolling' ? '滚动窗' : '批量裁'} · ${p.summaryMode === 'R' ? `R ${fmt.format(p.R)}` : `S ${fmt.format(p.S)}`} · K ${p.K} · H ${p.H}`;
     els.currentSummary.textContent = summaryText;
 
@@ -1797,7 +2117,22 @@
 
     renderTable(intervals, points);
     drawChart(p, series);
-    updateChartProbe();
+    updateChartProbe({ silentSr: true });
+
+    {
+      const crossSay = cross ? `打平约 ${cross} 轮` : '无打平交叉';
+      const ratioSay = postKCount > 0 ? ` 摘要后轮次里 B 更省约占 ${ratio.toFixed(1)}%。` : '';
+      const n = getChartProbeNClamped();
+      const nUse = Number.isFinite(n) ? n : 1;
+      const ptSr = points[nUse - 1];
+      let probeTail = '';
+      if (ptSr) {
+        probeTail = ` 探点第 ${nUse} 轮：B 比 A ${ptSr.d >= 0 ? '+' : ''}${money.format(ptSr.d)} 元。`;
+      }
+      announceParamSr(
+        `${dominant}。${crossSay}。末尾 ${winnerLabel}。B 更省阶段 ${intervals.length} 段。${ratioSay}${probeTail}`
+      );
+    }
   }
 
   function resetDefaults() {
@@ -1818,9 +2153,11 @@
     els.showBoundaries.checked = true;
     els.showBands.checked = true;
     render();
+    queueUrlSync();
   }
 
   function applyDemo() {
+    if (!window.confirm('将用「批量裁剪 + 偏长窗口」示例覆盖当前参数。确定继续？')) return;
     els.bMode.value = 'batch';
     els.c_in.value = 12;
     els.c_cache.value = 1;
@@ -1833,16 +2170,17 @@
     els.summaryMode.value = 'R';
     els.R.value = 10;
     render();
+    queueUrlSync();
   }
 
   [...document.querySelectorAll('input, select')].forEach(el => {
     if (el.id === 'chartProbeN') return;
-    el.addEventListener('input', scheduleRender);
-    el.addEventListener('change', scheduleRender);
+    el.addEventListener('input', () => { scheduleRender(); queueUrlSync(); });
+    el.addEventListener('change', () => { scheduleRender(); queueUrlSync(); });
   });
   if (els.chartProbeN) {
-    els.chartProbeN.addEventListener('input', () => updateChartProbe());
-    els.chartProbeN.addEventListener('change', () => updateChartProbe());
+    els.chartProbeN.addEventListener('input', () => { updateChartProbe({ silentSr: true }); queueUrlSync(); });
+    els.chartProbeN.addEventListener('change', () => { updateChartProbe(); queueUrlSync(); });
   }
   if (els.chartProbePrev) {
     els.chartProbePrev.addEventListener('click', () => {
@@ -1858,6 +2196,25 @@
   }
   els.resetBtn.addEventListener('click', resetDefaults);
   els.demoBtn.addEventListener('click', applyDemo);
+  if (els.copyLinkBtn && els.copyToast) {
+    els.copyLinkBtn.addEventListener('click', async () => {
+      els.copyToast.textContent = '';
+      const url = buildShareURL();
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          throw new Error('clipboard unavailable');
+        }
+        els.copyToast.textContent = '已复制。将链接发给他人即可打开同一组参数（含当前探点轮次与图层开关）。';
+      } catch {
+        window.prompt('无法自动复制，请手动复制以下链接：', url);
+      }
+      window.setTimeout(() => {
+        if (els.copyToast && els.copyToast.textContent.startsWith('已复制')) els.copyToast.textContent = '';
+      }, 4200);
+    });
+  }
 
   if (els.chartWrap) {
     els.chartWrap.addEventListener('mouseleave', () => {
@@ -1868,8 +2225,15 @@
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (!els.chartWrap || document.activeElement !== els.chartWrap) return;
     if (!lastP || !els.chartProbeN) return;
+    const t = document.activeElement;
+    const onChart = els.chartWrap && t === els.chartWrap;
+    const inProbe =
+      els.chartProbeRegion &&
+      t &&
+      els.chartProbeRegion.contains(t) &&
+      t !== els.chartProbeN;
+    if (!onChart && !inProbe) return;
     e.preventDefault();
     const delta = e.key === 'ArrowLeft' ? -1 : 1;
     setChartProbeN(getChartProbeNClamped() + delta);
@@ -1886,6 +2250,7 @@
     mqGlossaryOpen.addEventListener('change', syncGlossaryOpen);
   }
 
+  readParamsFromLocation();
   render();
 })();
 </script></body>
