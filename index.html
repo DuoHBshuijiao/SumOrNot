@@ -1,0 +1,879 @@
+<!DOCTYPE html><html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>对话成本策略比较器</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(255,255,255,0.06);
+      --panel-2: rgba(255,255,255,0.08);
+      --border: rgba(255,255,255,0.12);
+      --text: #e8eefc;
+      --muted: #aeb9d6;
+      --accent: #7aa2ff;
+      --accent-2: #55d6be;
+      --danger: #ff8a8a;
+      --warning: #ffd36e;
+      --good-fill: rgba(85,214,190,0.10);
+      --bad-fill: rgba(255,138,138,0.08);
+      --grid: rgba(255,255,255,0.08);
+      --shadow: 0 20px 60px rgba(0,0,0,0.35);
+      --radius: 20px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(122,162,255,0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(85,214,190,0.12), transparent 26%),
+        linear-gradient(180deg, #09101f, #0b1020 45%, #0c1224);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1560px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 3vw, 42px);
+      letter-spacing: 0.2px;
+    }
+    .subtitle {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 14px;
+      max-width: 980px;
+      line-height: 1.55;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 380px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel h2 {
+      margin: 0;
+      padding: 18px 18px 12px;
+      font-size: 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .panel-body { padding: 16px 18px 18px; }
+    .section {
+      padding: 14px 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.10);
+    }
+    .section:last-child { border-bottom: 0; }
+    .section-title {
+      font-size: 13px;
+      color: #c7d2ee;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .field { margin-bottom: 12px; }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 7px;
+      font-size: 14px;
+    }
+    label { color: var(--text); }
+    .value {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    input[type="number"], select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      outline: none;
+    }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .toggle-row input { transform: translateY(1px); }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    button {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.08s ease, background 0.12s ease;
+    }
+    button:hover { background: rgba(255,255,255,0.10); }
+    button:active { transform: translateY(1px); }
+    .chart-panel { padding: 0; }
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .chart-header .meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .chart-wrap {
+      position: relative;
+      padding: 14px 14px 8px;
+    }
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 16px;
+      padding: 0 18px 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 999px;
+      display: inline-block;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 0 18px 18px;
+    }
+    .kpi {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .kpi .label { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+    .kpi .value { color: var(--text); font-size: 22px; font-weight: 700; }
+    .kpi .hint { margin-top: 6px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .analysis {
+      padding: 18px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    .analysis strong { color: #fff; }
+    .table-wrap {
+      padding: 0 18px 18px;
+      overflow: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+    }
+    th { color: #dfe7ff; font-weight: 700; background: rgba(255,255,255,0.03); }
+    td { color: var(--text); }
+    .good { color: var(--accent-2); }
+    .bad { color: var(--danger); }
+    .warn { color: var(--warning); }
+    .footer-note {
+      padding: 0 18px 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(8, 13, 27, 0.96);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #ecf2ff;
+      opacity: 0;
+      transform: translate(-50%, -110%);
+      transition: opacity 0.08s ease;
+      white-space: nowrap;
+      z-index: 5;
+    }
+    .tooltip .muted { color: var(--muted); }
+    @media (max-width: 1120px) {
+      .grid { grid-template-columns: 1fr; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .wrap { padding: 14px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>对话成本策略比较器</h1>
+        <div class="subtitle">切换 B 策略为“持续滚动窗口”或“批量裁剪”，调整 API 价格、总结频率 K、窗口 H、压缩比 R / 摘要长度 S，右侧会实时显示总成本曲线、差值曲线、优势区间和交点。</div>
+      </div>
+      <div class="pill">单页 HTML · 原生 JS · 可直接保存使用</div>
+    </header><div class="grid">
+  <aside class="panel">
+    <h2>参数面板</h2>
+    <div class="panel-body">
+      <div class="section">
+        <div class="section-title">策略选择</div>
+        <div class="field">
+          <div class="row"><label>策略 B 模式</label><span class="value">两种可切换</span></div>
+          <select id="bMode">
+            <option value="rolling">持续滚动窗口</option>
+            <option value="batch">批量裁剪</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">API 价格（元 / 百万 token）</div>
+        <div class="field">
+          <div class="row"><label>普通输入价格 c_in</label><span class="value" id="v-cin"></span></div>
+          <input id="c_in" type="range" min="1" max="50" step="0.5" value="12" />
+        </div>
+        <div class="field">
+          <div class="row"><label>缓存输入价格 c_cache</label><span class="value" id="v-ccache"></span></div>
+          <input id="c_cache" type="range" min="0" max="20" step="0.5" value="1" />
+        </div>
+        <div class="field">
+          <div class="row"><label>输出价格 c_out</label><span class="value" id="v-cout"></span></div>
+          <input id="c_out" type="range" min="1" max="100" step="0.5" value="24" />
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">对话基础参数</div>
+        <div class="field">
+          <div class="row"><label>系统提示词 P</label><span class="value" id="v-p"></span></div>
+          <input id="P" type="range" min="0" max="50000" step="100" value="10000" />
+        </div>
+        <div class="field">
+          <div class="row"><label>每轮输出 A</label><span class="value" id="v-a"></span></div>
+          <input id="A" type="range" min="100" max="10000" step="100" value="2000" />
+        </div>
+        <div class="field">
+          <div class="row"><label>最大轮数 N_max</label><span class="value" id="v-nmax"></span></div>
+          <input id="N_max" type="range" min="20" max="3000" step="10" value="1200" />
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">策略 B 参数</div>
+        <div class="field">
+          <div class="row"><label>总结频率 K</label><span class="value" id="v-k"></span></div>
+          <input id="K" type="range" min="1" max="100" step="1" value="20" />
+        </div>
+        <div class="field">
+          <div class="row"><label>滑动窗口 H</label><span class="value" id="v-h"></span></div>
+          <input id="H" type="range" min="1" max="300" step="1" value="30" />
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">摘要控制</div>
+        <div class="field">
+          <div class="row"><label>模式</label><span class="value">压缩比 R / 直接输入 S</span></div>
+          <select id="summaryMode">
+            <option value="R">按压缩比 R</option>
+            <option value="S">按摘要长度 S</option>
+          </select>
+        </div>
+        <div class="field" id="R-field">
+          <div class="row"><label>压缩比 R</label><span class="value" id="v-r"></span></div>
+          <input id="R" type="range" min="1" max="50" step="0.5" value="10" />
+        </div>
+        <div class="field" id="S-field" style="display:none;">
+          <div class="row"><label>摘要长度 S</label><span class="value" id="v-s"></span></div>
+          <input id="S" type="range" min="0" max="50000" step="100" value="4000" />
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">显示选项</div>
+        <div class="toggle-row"><input id="showDiff" type="checkbox" checked /><label for="showDiff">显示差值曲线</label></div>
+        <div class="toggle-row"><input id="showMarkers" type="checkbox" checked /><label for="showMarkers">标记交点</label></div>
+        <div class="toggle-row"><input id="showBoundaries" type="checkbox" checked /><label for="showBoundaries">显示 K / H 边界</label></div>
+        <div class="toggle-row"><input id="showBands" type="checkbox" checked /><label for="showBands">高亮 B 优势区间</label></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">操作</div>
+        <div class="btn-row">
+          <button id="resetBtn">恢复默认</button>
+          <button id="demoBtn">套用示例参数</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="panel chart-panel">
+    <div class="chart-header">
+      <div>
+        <h2 style="padding:0;border:0;margin:0;font-size:18px;">成本曲线与优势区间</h2>
+        <div class="meta">横轴为轮数 N，纵轴为累计成本（元）。绿色背景表示当前 B 策略比 A 更便宜；红色背景表示 A 更便宜。</div>
+      </div>
+      <div class="meta" id="currentSummary"></div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="tooltip" id="tooltip"></div>
+      <svg id="chart" viewBox="0 0 1160 600" preserveAspectRatio="none" aria-label="成本曲线图"></svg>
+    </div>
+
+    <div class="legend">
+      <span><i class="dot" style="background: var(--accent);"></i>策略 A：全缓存</span>
+      <span><i class="dot" style="background: var(--accent-2);"></i>策略 B：当前模式</span>
+      <span><i class="dot" style="background: var(--danger);"></i>差值 B - A</span>
+      <span><i class="dot" style="background: var(--warning);"></i>临界轮数</span>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="label">当前摘要长度 S</div>
+        <div class="value" id="kpi-s"></div>
+        <div class="hint" id="kpi-s-hint"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">首个交点</div>
+        <div class="value" id="kpi-break"></div>
+        <div class="hint" id="kpi-break-hint"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">N = N_max 时优胜策略</div>
+        <div class="value" id="kpi-winner"></div>
+        <div class="hint" id="kpi-winner-hint"></div>
+      </div>
+      <div class="kpi">
+        <div class="label">B 优势覆盖率</div>
+        <div class="value" id="kpi-ratio"></div>
+        <div class="hint" id="kpi-ratio-hint"></div>
+      </div>
+    </div>
+
+    <div class="analysis" id="analysis"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>区间</th>
+            <th>起点 N</th>
+            <th>终点 N</th>
+            <th>长度</th>
+            <th>区间内谁更便宜</th>
+          </tr>
+        </thead>
+        <tbody id="intervalTable"></tbody>
+      </table>
+    </div>
+    <div class="footer-note">建模说明：A 使用连续前缀缓存；B 的“持续滚动窗口”在窗口满后按保守模型近似为每轮重排，命中缓存大幅减弱；“批量裁剪”则在非裁剪轮可享受前缀缓存，但在裁剪或总结更新轮会发生缓存重置。此页面目的是把这类阈值与区间直观画出来，便于调参比较。</div>
+  </main>
+</div>
+
+  </div><script>
+(function () {
+  const els = {
+    bMode: document.getElementById('bMode'),
+    c_in: document.getElementById('c_in'),
+    c_cache: document.getElementById('c_cache'),
+    c_out: document.getElementById('c_out'),
+    P: document.getElementById('P'),
+    A: document.getElementById('A'),
+    N_max: document.getElementById('N_max'),
+    K: document.getElementById('K'),
+    H: document.getElementById('H'),
+    summaryMode: document.getElementById('summaryMode'),
+    R: document.getElementById('R'),
+    S: document.getElementById('S'),
+    showDiff: document.getElementById('showDiff'),
+    showMarkers: document.getElementById('showMarkers'),
+    showBoundaries: document.getElementById('showBoundaries'),
+    showBands: document.getElementById('showBands'),
+    chart: document.getElementById('chart'),
+    tooltip: document.getElementById('tooltip'),
+    currentSummary: document.getElementById('currentSummary'),
+    analysis: document.getElementById('analysis'),
+    intervalTable: document.getElementById('intervalTable'),
+    resetBtn: document.getElementById('resetBtn'),
+    demoBtn: document.getElementById('demoBtn'),
+    kpiS: document.getElementById('kpi-s'),
+    kpiSHint: document.getElementById('kpi-s-hint'),
+    kpiBreak: document.getElementById('kpi-break'),
+    kpiBreakHint: document.getElementById('kpi-break-hint'),
+    kpiWinner: document.getElementById('kpi-winner'),
+    kpiWinnerHint: document.getElementById('kpi-winner-hint'),
+    kpiRatio: document.getElementById('kpi-ratio'),
+    kpiRatioHint: document.getElementById('kpi-ratio-hint'),
+    vcin: document.getElementById('v-cin'),
+    vccache: document.getElementById('v-ccache'),
+    vcout: document.getElementById('v-cout'),
+    vp: document.getElementById('v-p'),
+    va: document.getElementById('v-a'),
+    vnmax: document.getElementById('v-nmax'),
+    vk: document.getElementById('v-k'),
+    vh: document.getElementById('v-h'),
+    vr: document.getElementById('v-r'),
+    vs: document.getElementById('v-s'),
+    rField: document.getElementById('R-field'),
+    sField: document.getElementById('S-field'),
+  };
+
+  const fmt = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 3 });
+  const money = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  function params() {
+    const c_in = +els.c_in.value;
+    const c_cache = +els.c_cache.value;
+    const c_out = +els.c_out.value;
+    const P = +els.P.value;
+    const A = +els.A.value;
+    const N_max = +els.N_max.value;
+    const K = +els.K.value;
+    const H = +els.H.value;
+    const mode = els.summaryMode.value;
+    const R = +els.R.value;
+    const S = +els.S.value;
+    const summaryS = mode === 'R' ? (K * A / R) : S;
+    return { c_in, c_cache, c_out, P, A, N_max, K, H, mode, R, S, summaryS, bMode: els.bMode.value };
+  }
+
+  function costA(n, p) {
+    const raw = p.P * p.c_in
+      + (n - 1) * p.P * p.c_cache
+      + (n - 1) * p.A * p.c_in
+      + ((n - 1) * (n - 2) / 2) * p.A * p.c_cache
+      + n * p.A * p.c_out;
+    return raw / 1e6;
+  }
+
+  function simulateB(p) {
+    const out = [];
+    let prevLen = 0;
+    let rawCount = 0;
+    let summaryActive = false;
+    let summaryChanged = false;
+
+    for (let n = 1; n <= p.N_max; n++) {
+      let len = 0;
+      let common = 0;
+      let summaryRound = (n > p.K && (n - 1) % p.K === 0);
+      let trimRound = false;
+
+      if (n === 1) {
+        summaryActive = false;
+        rawCount = 0;
+        len = p.P;
+        common = 0;
+      } else if (n <= p.K) {
+        summaryActive = false;
+        rawCount = n - 1;
+        len = p.P + rawCount * p.A;
+        common = prevLen;
+      } else {
+        if (n === p.K + 1) {
+          summaryActive = true;
+          rawCount = p.K;
+          len = p.P + p.summaryS + rawCount * p.A;
+          common = p.P;
+          summaryChanged = true;
+        } else {
+          summaryChanged = summaryRound;
+          rawCount += 1;
+
+          if (p.bMode === 'rolling') {
+            if (n <= p.H) {
+              len = p.P + p.summaryS + rawCount * p.A;
+              common = summaryChanged ? p.P : prevLen;
+            } else {
+              len = p.P + p.summaryS + p.H * p.A;
+              common = summaryChanged ? p.P : (p.P + p.summaryS);
+            }
+          } else {
+            trimRound = (rawCount === p.H + p.K);
+            if (trimRound) rawCount = p.H;
+            len = p.P + p.summaryS + rawCount * p.A;
+            if (summaryChanged && trimRound) common = p.P;
+            else if (summaryChanged) common = p.P;
+            else if (trimRound) common = p.P + p.summaryS;
+            else common = prevLen;
+          }
+        }
+      }
+
+      const inputCost = (common * p.c_cache + Math.max(0, len - common) * p.c_in) / 1e6;
+      const outputCost = (p.A * p.c_out) / 1e6;
+      const total = inputCost + outputCost;
+      out.push({ n, len, common, inputCost, outputCost, total });
+      prevLen = len;
+    }
+    return out;
+  }
+
+  function diffSeries(p) {
+    const a = [];
+    const bRounds = simulateB(p);
+    let bCumulative = 0;
+    for (let n = 1; n <= p.N_max; n++) {
+      const av = costA(n, p);
+      bCumulative += bRounds[n - 1].total;
+      a.push({ n, a: av, b: bCumulative, d: bCumulative - av });
+    }
+    return { points: a };
+  }
+
+  function findIntervals(points) {
+    const intervals = [];
+    let start = null;
+    for (let i = 0; i < points.length; i++) {
+      const good = points[i].d <= 0;
+      if (good && start === null) start = points[i].n;
+      if ((!good || i === points.length - 1) && start !== null) {
+        const end = good && i === points.length - 1 ? points[i].n : points[i - 1].n;
+        intervals.push({ start, end, len: end - start + 1 });
+        start = null;
+      }
+    }
+    return intervals;
+  }
+
+  function firstCross(points) {
+    for (let i = 1; i < points.length; i++) {
+      const p0 = points[i - 1], p1 = points[i];
+      if ((p0.d > 0 && p1.d <= 0) || (p0.d < 0 && p1.d >= 0)) {
+        const t = p1.d === p0.d ? 0 : (0 - p0.d) / (p1.d - p0.d);
+        return (p0.n + t).toFixed(1);
+      }
+    }
+    return null;
+  }
+
+  function yVal(v, yMin, yMax, top, height) {
+    return top + (yMax - v) / (yMax - yMin) * height;
+  }
+
+  function drawChart(p, series) {
+    const points = series.points;
+    const svg = els.chart;
+    const W = 1160, H = 600;
+    const pad = { l: 72, r: 26, t: 18, b: 56 };
+    const cw = W - pad.l - pad.r;
+    const ch = H - pad.t - pad.b;
+
+    const allVals = points.flatMap(d => [d.a, d.b, d.d]);
+    const yMin = Math.min(0, ...allVals);
+    const yMax = Math.max(...allVals) * 1.06 + 1e-9;
+
+    const x = n => pad.l + (n - 1) / Math.max(1, (p.N_max - 1)) * cw;
+    const y = v => yVal(v, yMin, yMax, pad.t, ch);
+
+    function pathOf(key) {
+      return points.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(d.n).toFixed(2)} ${y(d[key]).toFixed(2)}`).join(' ');
+    }
+    const pathA = pathOf('a');
+    const pathB = pathOf('b');
+    const pathD = pathOf('d');
+
+    const yTicks = [];
+    const tickCount = 6;
+    for (let i = 0; i <= tickCount; i++) yTicks.push(yMin + (yMax - yMin) * i / tickCount);
+
+    const xTicks = [];
+    const step = Math.max(1, Math.round(p.N_max / 10));
+    for (let n = 1; n <= p.N_max; n += step) xTicks.push(n);
+    if (xTicks[xTicks.length - 1] !== p.N_max) xTicks.push(p.N_max);
+
+    const intervals = findIntervals(points);
+
+    let html = '';
+    html += `<rect x="0" y="0" width="${W}" height="${H}" rx="18" fill="rgba(255,255,255,0.02)" />`;
+
+    if (els.showBands.checked) {
+      for (const seg of intervals) {
+        const x1 = x(seg.start);
+        const x2 = x(seg.end) + (seg.end < p.N_max ? (cw / Math.max(1, p.N_max - 1)) : 0);
+        html += `<rect x="${x1.toFixed(2)}" y="${pad.t}" width="${Math.max(0, x2 - x1).toFixed(2)}" height="${ch}" fill="var(--good-fill)" />`;
+      }
+    }
+
+    for (const v of yTicks) {
+      const yy = y(v);
+      html += `<line x1="${pad.l}" y1="${yy}" x2="${W - pad.r}" y2="${yy}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 4" />`;
+      html += `<text x="${pad.l - 10}" y="${yy + 4}" fill="rgba(255,255,255,0.65)" font-size="12" text-anchor="end">${v >= 0 ? money.format(v) : '-' + money.format(Math.abs(v))}</text>`;
+    }
+
+    for (const n of xTicks) {
+      const xx = x(n);
+      html += `<line x1="${xx}" y1="${pad.t}" x2="${xx}" y2="${H - pad.b}" stroke="rgba(255,255,255,0.06)" />`;
+      html += `<text x="${xx}" y="${H - pad.b + 24}" fill="rgba(255,255,255,0.65)" font-size="12" text-anchor="middle">${n}</text>`;
+    }
+
+    if (els.showBoundaries.checked) {
+      const kx = x(p.K);
+      const hx = x(p.H);
+      html += `<line x1="${kx}" y1="${pad.t}" x2="${kx}" y2="${H - pad.b}" stroke="rgba(255,211,110,0.8)" stroke-dasharray="7 6" />`;
+      html += `<line x1="${hx}" y1="${pad.t}" x2="${hx}" y2="${H - pad.b}" stroke="rgba(255,255,255,0.35)" stroke-dasharray="7 6" />`;
+      html += `<text x="${kx + 6}" y="${pad.t + 16}" fill="rgba(255,211,110,0.95)" font-size="12">K=${p.K}</text>`;
+      html += `<text x="${hx + 6}" y="${pad.t + 34}" fill="rgba(255,255,255,0.75)" font-size="12">H=${p.H}</text>`;
+    }
+
+    if (els.showMarkers.checked) {
+      const cross = firstCross(points);
+      if (cross) {
+        const n = Math.max(1, Math.min(p.N_max, Math.round(+cross)));
+        const d = points[n - 1];
+        html += `<circle cx="${x(n)}" cy="${y(d.a)}" r="6" fill="rgba(255,211,110,0.96)" stroke="white" stroke-width="1.2" />`;
+        html += `<text x="${x(n) + 10}" y="${y(d.a) - 10}" fill="rgba(255,211,110,0.96)" font-size="12">交点≈${cross}</text>`;
+      }
+    }
+
+    html += `<path d="${pathA}" fill="none" stroke="#7aa2ff" stroke-width="3.5" />`;
+    html += `<path d="${pathB}" fill="none" stroke="#55d6be" stroke-width="3.5" />`;
+    if (els.showDiff.checked) {
+      html += `<line x1="${pad.l}" y1="${y(0)}" x2="${W - pad.r}" y2="${y(0)}" stroke="rgba(255,211,110,0.45)" stroke-dasharray="5 5" />`;
+      html += `<path d="${pathD}" fill="none" stroke="#ff8a8a" stroke-width="2.8" stroke-dasharray="8 5" />`;
+    }
+
+    points.forEach((d) => {
+      const xx = x(d.n);
+      html += `<circle data-n="${d.n}" data-a="${d.a}" data-b="${d.b}" data-d="${d.d}" cx="${xx}" cy="${y(d.a)}" r="5" fill="#7aa2ff" opacity="0" />`;
+      html += `<circle data-n="${d.n}" data-a="${d.a}" data-b="${d.b}" data-d="${d.d}" cx="${xx}" cy="${y(d.b)}" r="5" fill="#55d6be" opacity="0" />`;
+    });
+
+    html += `<text x="${W / 2}" y="${H - 14}" fill="rgba(255,255,255,0.75)" font-size="13" text-anchor="middle">轮数 N</text>`;
+    html += `<text x="18" y="${H / 2}" fill="rgba(255,255,255,0.75)" font-size="13" text-anchor="middle" transform="rotate(-90 18 ${H / 2})">累计成本（元）</text>`;
+
+    svg.innerHTML = html;
+
+    [...svg.querySelectorAll('circle[data-n]')].forEach(c => {
+      c.style.pointerEvents = 'auto';
+      c.addEventListener('mousemove', evt => {
+        const rect = svg.getBoundingClientRect();
+        const ptX = evt.clientX - rect.left;
+        const ptY = evt.clientY - rect.top;
+        const n = +c.dataset.n;
+        const a = +c.dataset.a;
+        const b = +c.dataset.b;
+        const d = +c.dataset.d;
+        els.tooltip.style.left = `${ptX}px`;
+        els.tooltip.style.top = `${ptY}px`;
+        els.tooltip.innerHTML = `
+          <div><strong>N = ${n}</strong></div>
+          <div><span class="muted">A:</span> ${money.format(a)} 元</div>
+          <div><span class="muted">B:</span> ${money.format(b)} 元</div>
+          <div><span class="muted">B - A:</span> ${d >= 0 ? '+' : ''}${money.format(d)} 元</div>
+        `;
+        els.tooltip.style.opacity = '1';
+      });
+      c.addEventListener('mouseleave', () => { els.tooltip.style.opacity = '0'; });
+    });
+
+    svg.addEventListener('mouseleave', () => { els.tooltip.style.opacity = '0'; });
+  }
+
+  function renderTable(intervals, points) {
+    if (!intervals.length) {
+      els.intervalTable.innerHTML = `<tr><td colspan="5">当前参数下，B 在整个范围内都没有形成成本优势区间。</td></tr>`;
+      return;
+    }
+    els.intervalTable.innerHTML = intervals.map((seg, idx) => {
+      const start = points[seg.start - 1];
+      const end = points[seg.end - 1];
+      const sign = start.d <= 0 && end.d <= 0 ? 'B 更便宜' : '接近打平';
+      return `
+        <tr>
+          <td>#${idx + 1}</td>
+          <td>${seg.start}</td>
+          <td>${seg.end}</td>
+          <td>${seg.len}</td>
+          <td class="good">${sign}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateModeVisibility() {
+    const mode = els.summaryMode.value;
+    els.rField.style.display = mode === 'R' ? '' : 'none';
+    els.sField.style.display = mode === 'S' ? '' : 'none';
+  }
+
+  function setText(el, text) { el.textContent = text; }
+
+  function render() {
+    updateModeVisibility();
+    const p = params();
+    const series = diffSeries(p);
+    const points = series.points;
+    const intervals = findIntervals(points);
+    const cross = firstCross(points);
+    const minDiff = points.reduce((acc, d) => Math.abs(d.d) < Math.abs(acc.d) ? d : acc, points[0]);
+    const advantageCount = points.filter(d => d.d <= 0).length;
+
+    const currentS = p.summaryS;
+    setText(els.vcin, fmt.format(p.c_in));
+    setText(els.vccache, fmt.format(p.c_cache));
+    setText(els.vcout, fmt.format(p.c_out));
+    setText(els.vp, fmt.format(p.P));
+    setText(els.va, fmt.format(p.A));
+    setText(els.vnmax, fmt.format(p.N_max));
+    setText(els.vk, fmt.format(p.K));
+    setText(els.vh, fmt.format(p.H));
+    setText(els.vr, fmt.format(p.R));
+    setText(els.vs, fmt.format(p.S));
+
+    els.kpiS.textContent = fmt.format(currentS);
+    els.kpiSHint.textContent = p.summaryMode === 'R'
+      ? `S = K × A / R = ${fmt.format(p.K)} × ${fmt.format(p.A)} / ${fmt.format(p.R)}`
+      : `直接使用手动输入的摘要长度`;
+
+    els.kpiBreak.textContent = cross ? cross : '无';
+    els.kpiBreakHint.textContent = cross ? '这是 A / B 总成本差值的近似穿越点。' : '在当前 N_max 范围内未检测到交点。';
+
+    const winnerAtN = points[p.N_max - 1];
+    els.kpiWinner.textContent = winnerAtN.a < winnerAtN.b ? 'A 更便宜' : (winnerAtN.a > winnerAtN.b ? 'B 更便宜' : '打平');
+    els.kpiWinnerHint.textContent = `在 N = ${fmt.format(p.N_max)} 时比较。`;
+
+    const ratio = (advantageCount / points.length) * 100;
+    els.kpiRatio.textContent = `${ratio.toFixed(1)}%`;
+    els.kpiRatioHint.textContent = `在当前 N 范围内，B 更便宜的轮数占比。`;
+
+    const summaryText = `${p.bMode === 'rolling' ? '持续滚动窗口' : '批量裁剪'} · ${p.summaryMode === 'R' ? `R=${fmt.format(p.R)}` : `S=${fmt.format(p.S)}`} · K=${p.K} · H=${p.H}`;
+    els.currentSummary.textContent = summaryText;
+
+    const firstGood = intervals[0];
+    const lastGood = intervals[intervals.length - 1];
+    let dominant = 'A 更常占优';
+    if (advantageCount > points.length / 2) dominant = 'B 更常占优';
+    if (advantageCount === 0) dominant = 'A 全程占优';
+    if (advantageCount === points.length) dominant = 'B 全程占优';
+
+    els.analysis.innerHTML = `
+      当前模式下，<strong>${dominant}</strong>。<br>
+      B 的优势区间共 <strong>${intervals.length}</strong> 段，覆盖了约 <strong>${ratio.toFixed(1)}%</strong> 的轮数范围。<br>
+      最接近打平的轮数出现在 <strong>N = ${fmt.format(minDiff.n)}</strong>，此时差值约为 <strong>${minDiff.d >= 0 ? '+' : ''}${money.format(minDiff.d)} 元</strong>。<br>
+      ${firstGood ? `首段优势区间约为 <strong>[${firstGood.start}, ${firstGood.end}]</strong>。` : '当前参数下没有 B 的成本优势区间。'}
+      ${lastGood && intervals.length > 1 ? `末段优势区间约为 <strong>[${lastGood.start}, ${lastGood.end}]</strong>。` : ''}
+    `;
+
+    renderTable(intervals, points);
+    drawChart(p, series);
+  }
+
+  function resetDefaults() {
+    els.bMode.value = 'rolling';
+    els.c_in.value = 12;
+    els.c_cache.value = 1;
+    els.c_out.value = 24;
+    els.P.value = 10000;
+    els.A.value = 2000;
+    els.N_max.value = 1200;
+    els.K.value = 20;
+    els.H.value = 30;
+    els.summaryMode.value = 'R';
+    els.R.value = 10;
+    els.S.value = 4000;
+    els.showDiff.checked = true;
+    els.showMarkers.checked = true;
+    els.showBoundaries.checked = true;
+    els.showBands.checked = true;
+    render();
+  }
+
+  function applyDemo() {
+    els.bMode.value = 'batch';
+    els.c_in.value = 12;
+    els.c_cache.value = 1;
+    els.c_out.value = 24;
+    els.P.value = 10000;
+    els.A.value = 2000;
+    els.N_max.value = 1500;
+    els.K.value = 20;
+    els.H.value = 100;
+    els.summaryMode.value = 'R';
+    els.R.value = 10;
+    render();
+  }
+
+  [...document.querySelectorAll('input, select')].forEach(el => {
+    el.addEventListener('input', render);
+    el.addEventListener('change', render);
+  });
+  els.resetBtn.addEventListener('click', resetDefaults);
+  els.demoBtn.addEventListener('click', applyDemo);
+
+  render();
+})();
+</script></body>
+</html>
