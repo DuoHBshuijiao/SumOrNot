@@ -582,22 +582,26 @@
   }
 
   function diffSeries(p) {
-    const a = [];
     const bRounds = simulateB(p);
-    let bCumulative = 0;
+    const prefix = [0];
+    for (let j = 0; j < bRounds.length; j++) prefix.push(prefix[prefix.length - 1] + bRounds[j].total);
+    const atK = costA(p.K, p);
+    const a = [];
     for (let n = 1; n <= p.N_max; n++) {
       const av = costA(n, p);
-      bCumulative += bRounds[n - 1].total;
+      const bCumulative = n <= p.K
+        ? av
+        : atK + (prefix[n] - prefix[p.K]);
       a.push({ n, a: av, b: bCumulative, d: bCumulative - av });
     }
     return { points: a };
   }
 
-  function findIntervals(points) {
+  function findIntervals(points, K) {
     const intervals = [];
     let start = null;
     for (let i = 0; i < points.length; i++) {
-      const good = points[i].d <= 0;
+      const good = points[i].n > K && points[i].d <= 0;
       if (good && start === null) start = points[i].n;
       if ((!good || i === points.length - 1) && start !== null) {
         const end = good && i === points.length - 1 ? points[i].n : points[i - 1].n;
@@ -654,7 +658,7 @@
     for (let n = 1; n <= p.N_max; n += step) xTicks.push(n);
     if (xTicks[xTicks.length - 1] !== p.N_max) xTicks.push(p.N_max);
 
-    const intervals = findIntervals(points);
+    const intervals = findIntervals(points, p.K);
 
     let html = '';
     html += `<rect x="0" y="0" width="${W}" height="${H}" rx="18" fill="rgba(255,255,255,0.02)" />`;
@@ -776,10 +780,11 @@
     const p = params();
     const series = diffSeries(p);
     const points = series.points;
-    const intervals = findIntervals(points);
+    const intervals = findIntervals(points, p.K);
     const cross = firstCross(points);
     const minDiff = points.reduce((acc, d) => Math.abs(d.d) < Math.abs(acc.d) ? d : acc, points[0]);
-    const advantageCount = points.filter(d => d.d <= 0).length;
+    const postKCount = Math.max(0, p.N_max - p.K);
+    const advantageCount = points.filter(d => d.n > p.K && d.d <= 0).length;
 
     const currentS = p.summaryS;
     setText(els.vcin, fmt.format(p.c_in));
@@ -805,9 +810,11 @@
     els.kpiWinner.textContent = winnerAtN.a < winnerAtN.b ? 'A 更便宜' : (winnerAtN.a > winnerAtN.b ? 'B 更便宜' : '打平');
     els.kpiWinnerHint.textContent = `在 N = ${fmt.format(p.N_max)} 时比较。`;
 
-    const ratio = (advantageCount / points.length) * 100;
-    els.kpiRatio.textContent = `${ratio.toFixed(1)}%`;
-    els.kpiRatioHint.textContent = `在当前 N 范围内，B 更便宜的轮数占比。`;
+    const ratio = postKCount > 0 ? (advantageCount / postKCount) * 100 : 0;
+    els.kpiRatio.textContent = postKCount > 0 ? `${ratio.toFixed(1)}%` : '—';
+    els.kpiRatioHint.textContent = postKCount > 0
+      ? `在 N > K 的共 ${postKCount} 轮中，B 更便宜的轮数占比。N≤K 未触发首摘，A/B 与 A 基线一致，不计入。`
+      : '当前 N_max ≤ K，尚未触发第一次摘要，不统计 B 优势占比。';
 
     const summaryText = `${p.bMode === 'rolling' ? '持续滚动窗口' : '批量裁剪'} · ${p.summaryMode === 'R' ? `R=${fmt.format(p.R)}` : `S=${fmt.format(p.S)}`} · K=${p.K} · H=${p.H}`;
     els.currentSummary.textContent = summaryText;
@@ -815,16 +822,23 @@
     const firstGood = intervals[0];
     const lastGood = intervals[intervals.length - 1];
     let dominant = 'A 更常占优';
-    if (advantageCount > points.length / 2) dominant = 'B 更常占优';
-    if (advantageCount === 0) dominant = 'A 全程占优';
-    if (advantageCount === points.length) dominant = 'B 全程占优';
+    if (postKCount === 0) dominant = '未触发首摘，A/B 无差异';
+    else if (advantageCount === postKCount) dominant = 'B 全程占优';
+    else if (advantageCount === 0) dominant = 'A 全程占优';
+    else if (advantageCount > postKCount / 2) dominant = 'B 更常占优';
+    else dominant = 'A 更常占优';
+
+    const ratioLine = postKCount > 0
+      ? `在 <strong>N &gt; K</strong> 的轮次中，B 更便宜约占 <strong>${ratio.toFixed(1)}%</strong>（分母为 ${postKCount} 轮）。`
+      : '因 <strong>N_max ≤ K</strong>，尚未进入首摘后的比较区间，优势占比 <strong>不适用</strong>。';
 
     els.analysis.innerHTML = `
       当前模式下，<strong>${dominant}</strong>。<br>
-      B 的优势区间共 <strong>${intervals.length}</strong> 段，覆盖了约 <strong>${ratio.toFixed(1)}%</strong> 的轮数范围。<br>
+      B 的优势区间共 <strong>${intervals.length}</strong> 段；${ratioLine}<br>
       最接近打平的轮数出现在 <strong>N = ${fmt.format(minDiff.n)}</strong>，此时差值约为 <strong>${minDiff.d >= 0 ? '+' : ''}${money.format(minDiff.d)} 元</strong>。<br>
       ${firstGood ? `首段优势区间约为 <strong>[${firstGood.start}, ${firstGood.end}]</strong>。` : '当前参数下没有 B 的成本优势区间。'}
       ${lastGood && intervals.length > 1 ? `末段优势区间约为 <strong>[${lastGood.start}, ${lastGood.end}]</strong>。` : ''}
+      <br><span style="color:var(--muted);font-size:12px;opacity:0.9">N ≤ K 时未触发首摘，累计差值为 0；B 优势区间与占比仅针对 N &gt; K（首摘已发生）。</span>
     `;
 
     renderTable(intervals, points);
