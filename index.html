@@ -935,7 +935,7 @@
       padding: var(--space-2) var(--space-3);
       font-size: var(--text-sm);
       line-height: var(--leading-relaxed);
-      min-height: 2.75rem;
+      min-height: 4.25rem;
       color: var(--text);
       background: var(--bg);
       border: 1px solid var(--border);
@@ -1603,10 +1603,12 @@
 
   function formatProbeReadout(d) {
     if (!d) return '这一轮没有可用数据。';
-    const a = money.format(d.a);
-    const b = money.format(d.b);
+    const aYuan = money.format(d.a);
+    const bYuan = money.format(d.b);
     const sign = d.d >= 0 ? '+' : '';
-    return `第 ${d.n} 轮：A 累计 ${a} 元，B 累计 ${b} 元；B 比 A ${sign}${money.format(d.d)} 元。`;
+    const head = `第 ${d.n} 轮：A 累计 ${aYuan} 元，B 累计 ${bYuan} 元；B 比 A ${sign}${money.format(d.d)} 元。`;
+    const tok = ` A：累计输入 ${fmt.format(d.aCumInTok)} token，单轮输入 ${fmt.format(d.aRoundInTok)} token，单轮花销 ${money.format(d.aRoundCost)} 元。B：累计输入 ${fmt.format(d.bCumInTok)} token，单轮输入 ${fmt.format(d.bRoundInTok)} token，单轮花销 ${money.format(d.bRoundCost)} 元。`;
+    return head + tok;
   }
 
   function getChartProbeNClamped() {
@@ -1755,12 +1757,32 @@
     for (let j = 0; j < bRounds.length; j++) prefix.push(prefix[prefix.length - 1] + bRounds[j].total);
     const atK = costA(p.K, p);
     const a = [];
+    let cumAInTok = 0;
+    let cumBInTok = 0;
+    let prevAv = 0;
     for (let n = 1; n <= p.N_max; n++) {
       const av = costA(n, p);
       const bCumulative = n <= p.K
         ? av
         : atK + (prefix[n] - prefix[p.K]);
-      a.push({ n, a: av, b: bCumulative, d: bCumulative - av });
+      const aRoundInTok = p.P + (n - 1) * p.A;
+      cumAInTok += aRoundInTok;
+      const br = bRounds[n - 1];
+      cumBInTok += br.len;
+      const aRoundCost = n === 1 ? av : av - prevAv;
+      prevAv = av;
+      a.push({
+        n,
+        a: av,
+        b: bCumulative,
+        d: bCumulative - av,
+        aCumInTok: cumAInTok,
+        aRoundInTok,
+        aRoundCost,
+        bCumInTok: cumBInTok,
+        bRoundInTok: br.len,
+        bRoundCost: br.total,
+      });
     }
     return { points: a };
   }
